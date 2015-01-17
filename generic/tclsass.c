@@ -14,13 +14,164 @@
 #include "tclsass.h"		/* NOTE: For public package API. */
 
 /*
+ * NOTE: These are the types of Sass contexts supported by the [sass compile]
+ *       sub-command.  They are used to process the -type option.
+ */
+
+enum Sass_Context_Type {
+  SASS_CONTEXT_NONE,
+  SASS_CONTEXT_DATA,
+  SASS_CONTEXT_FILE
+};
+
+/*
  * NOTE: Private functions defined in this file.
  */
 
+static int		GetContextTypeFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, enum Sass_Context_Type *typePtr);
+static int		GetOutputStyleFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, enum Sass_Output_Style *stylePtr);
+static int		ProcessAllOptions(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[], int *idxPtr,
+			    enum Sass_Context_Type *typePtr,
+			    struct Sass_Options *optsPtr);
+static int		SetResultFromContext(Tcl_Interp *interp,
+			    struct Sass_Context *ctxPtr);
 static void		SassExitProc(ClientData clientData);
 static int		SassObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static void		SassObjCmdDeleteProc(ClientData clientData);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetContextTypeFromObj --
+ *
+ *	This function attempts to convert a string context type name
+ *	into an actual Sass_Context_Type value.  The valid values for
+ *	the string context type name are:
+ *
+ *		data
+ *		file
+ *
+ *	If the string context type name does not conform to one of the
+ *	above values, it will be rejected and a script error will be
+ *	generated.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int GetContextTypeFromObj(
+    Tcl_Interp *interp,			/* Current Tcl interpreter. */
+    Tcl_Obj *objPtr,			/* The string to convert. */
+    enum Sass_Context_Type *typePtr)	/* OUT: The context type. */
+{
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetOutputStyleFromObj --
+ *
+ *	This function attempts to convert a string output style name
+ *	into an actual Sass_Output_Style value.  The valid values for
+ *	the string context type name are:
+ *
+ *		nested
+ *		expanded
+ *		compact
+ *		compressed
+ *
+ *	If the string output style name does not conform to one of the
+ *	above values, it will be rejected and a script error will be
+ *	generated.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int GetOutputStyleFromObj(
+    Tcl_Interp *interp,			/* Current Tcl interpreter. */
+    Tcl_Obj *objPtr,			/* The string to convert. */
+    enum Sass_Output_Style *stylePtr)	/* OUT: The output style. */
+{
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ProcessAllOptions --
+ *
+ *	This function processes options supported by the [sass compile]
+ *	sub-command.  If an option does not coform to the expected type
+ *	-OR- an unknown option is encountered, a script error will be
+ *	generated.  All valid options, except -type, are processed by
+ *	setting the appropriate field within the Sass_Options struct,
+ *	using the public API.  The -type option is handled by processing
+ *	the resulting Sass_Context_Type into the provided value pointer.
+ *	The first argument index after all options are processed will be
+ *	stored into the idxPtr argument, if applicable.  If there are no
+ *	more arguments after processing the options, a value of -1 will
+ *	be stored.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int ProcessAllOptions(
+    Tcl_Interp *interp,			/* Current Tcl interpreter. */
+    int objc,				/* Number of arguments. */
+    Tcl_Obj *CONST objv[],		/* The arguments. */
+    int *idxPtr,			/* OUT: First non-option argument. */
+    enum Sass_Context_Type *typePtr,	/* OUT: The context type. */
+    struct Sass_Options *optsPtr)	/* IN/OUT: The context options. */
+{
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetResultFromContext --
+ *
+ *	This function quries the specified Sass_Context and uses the
+ *	error status and output string to modify the result of the Tcl
+ *	interpreter.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int SetResultFromContext(
+    Tcl_Interp *interp,			/* Current Tcl interpreter. */
+    struct Sass_Context *ctxPtr)	/* IN: Get status/result from here. */
+{
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -297,6 +448,7 @@ static int SassObjCmd(
 {
     int code = TCL_OK;
     int option;
+    Tcl_Obj *listPtr;
 
     static CONST char *cmdOptions[] = {
 	"compile", "version", (char *) NULL
@@ -332,7 +484,19 @@ static int SassObjCmd(
 		return TCL_ERROR;
 	    }
 
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(libsass_version(), -1));
+	    listPtr = Tcl_NewListObj(0, NULL);
+
+	    if (listPtr == NULL) {
+		Tcl_AppendResult(interp, "out of memory: listPtr\n", NULL);
+		goto done;
+	    }
+
+	    Tcl_IncrRefCount(listPtr);
+	    Tcl_ListObjAppendElement(interp, listPtr,
+		Tcl_NewStringObj("libsass", -1));
+	    Tcl_ListObjAppendElement(interp, listPtr,
+		Tcl_NewStringObj(libsass_version(), -1));
+	    Tcl_SetObjResult(interp, listPtr);
 	    break;
 	}
 	default: {

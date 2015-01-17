@@ -24,7 +24,11 @@
  */
 
 #ifndef PACKAGE_TRACE
-  #define PACKAGE_TRACE(x)			printf x
+  #ifdef _TRACE
+    #define PACKAGE_TRACE(x)			printf x
+  #else
+    #define PACKAGE_TRACE(x)
+  #endif
 #endif
 
 /*
