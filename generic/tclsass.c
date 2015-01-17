@@ -7,6 +7,8 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <stdlib.h>		/* NOTE: For free(). */
+#include <string.h>		/* NOTE: For strlen(), strdup(). */
 #include "tcl.h"		/* NOTE: For public Tcl API. */
 #include "sass_context.h"	/* NOTE: For public libsass API. */
 #include "pkgVersion.h"		/* NOTE: Package version information. */
@@ -183,6 +185,7 @@ static int SetResultFromContext(
 {
     int code;
     int rc;
+    struct Sass_Context *optsPtr;
     const char *zSourceMapFile;
     Tcl_Obj *listPtr = NULL;
     Tcl_Obj *objPtr;
@@ -268,7 +271,10 @@ static int SetResultFromContext(
 	if (code != TCL_OK)
 	    goto done;
 
-	zSourceMapFile = sass_option_get_source_map_file(ctxPtr);
+	optsPtr = sass_context_get_options(ctxPtr);
+
+	zSourceMapFile = (optsPtr != NULL) ?
+	    sass_option_get_source_map_file(optsPtr) : NULL;
 
 	if ((zSourceMapFile != NULL) && (strlen(zSourceMapFile) > 0)) {
 	    objPtr = Tcl_NewStringObj("sourceMapString", -1);
