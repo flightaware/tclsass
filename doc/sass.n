@@ -1,0 +1,21 @@
+'\"
+.so man.macros
+.TH sass n 1.0 "Tcl-Extensions"
+.HS sass tcl
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+sass \- interfaces with Sass, a pre-processing language for CSS.
+.SH SYNOPSIS
+\fBpackage require sass\fR ?\fB1.0\fR?
+.sp
+\fBsass compile \fR?\fIoptions\fR? \fIscript\fR
+.sp
+\fBsass version\fR
+.BE
+.SH DESCRIPTION
+.PP
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:
