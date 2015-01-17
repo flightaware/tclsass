@@ -26,7 +26,7 @@ test sass-1.2 {version sub-command output} -body {
   # TODO
 } -result {}
 
-test sass-1.3 {compile sub-command output} {
+test sass-1.3 {compile sub-command output} -body {
   # TODO
 } -result {}
 

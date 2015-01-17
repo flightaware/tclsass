@@ -9,9 +9,9 @@
 
 #include "tcl.h"		/* NOTE: For public Tcl API. */
 #include "sass_context.h"	/* NOTE: For public libsass API. */
-#include "pkgVersion.h"         /* NOTE: Package version information. */
-#include "tclsassInt.h"         /* NOTE: For private package API. */
-#include "tclsass.h"            /* NOTE: For public package API. */
+#include "pkgVersion.h"		/* NOTE: Package version information. */
+#include "tclsassInt.h"		/* NOTE: For private package API. */
+#include "tclsass.h"		/* NOTE: For public package API. */
 
 /*
  * NOTE: Private functions defined in this file.
