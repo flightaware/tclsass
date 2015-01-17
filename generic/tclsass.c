@@ -15,13 +15,16 @@
 
 /*
  * NOTE: These are the types of Sass contexts supported by the [sass compile]
- *       sub-command.  They are used to process the -type option.
+ *       sub-command.  They are used to process the -type option.  The values
+ *       were stolen from the Sass_Input_Style enumeration within the libsass
+ *       source code file "sass_context.cpp".
  */
 
 enum Sass_Context_Type {
-  SASS_CONTEXT_NONE,
+  SASS_CONTEXT_NULL,
+  SASS_CONTEXT_FILE,
   SASS_CONTEXT_DATA,
-  SASS_CONTEXT_FILE
+  SASS_CONTEXT_FOLDER
 };
 
 /*
@@ -38,6 +41,10 @@ static int		ProcessAllOptions(Tcl_Interp *interp, int objc,
 			    struct Sass_Options *optsPtr);
 static int		SetResultFromContext(Tcl_Interp *interp,
 			    struct Sass_Context *ctxPtr);
+static int		CompileForType(Tcl_Interp *interp,
+			    enum Sass_Context_Type type,
+			    struct Sass_Options **pOptsPtr,
+			    const char* zSource);
 static void		SassExitProc(ClientData clientData);
 static int		SassObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
@@ -73,6 +80,7 @@ static int GetContextTypeFromObj(
     Tcl_Obj *objPtr,			/* The string to convert. */
     enum Sass_Context_Type *typePtr)	/* OUT: The context type. */
 {
+    *typePtr = SASS_CONTEXT_DATA; /* TODO: Make this work. */
     return TCL_OK;
 }
 
@@ -108,6 +116,7 @@ static int GetOutputStyleFromObj(
     Tcl_Obj *objPtr,			/* The string to convert. */
     enum Sass_Output_Style *stylePtr)	/* OUT: The output style. */
 {
+    *stylePtr = SASS_STYLE_NESTED; /* TODO: Make this work. */
     return TCL_OK;
 }
 
@@ -123,10 +132,11 @@ static int GetOutputStyleFromObj(
  *	setting the appropriate field within the Sass_Options struct,
  *	using the public API.  The -type option is handled by processing
  *	the resulting Sass_Context_Type into the provided value pointer.
- *	The first argument index after all options are processed will be
- *	stored into the idxPtr argument, if applicable.  If there are no
- *	more arguments after processing the options, a value of -1 will
- *	be stored.
+ *	The first option argument index to check is queried from the
+ *	idxPtr argument.  Furthermore, the first non-option argument
+ *	index after all options are processed will be stored into the
+ *	idxPtr argument, if applicable.  If there are no more arguments
+ *	after processing the options, a value of -1 will be stored.
  *
  * Results:
  *	A standard Tcl result.
@@ -141,10 +151,11 @@ static int ProcessAllOptions(
     Tcl_Interp *interp,			/* Current Tcl interpreter. */
     int objc,				/* Number of arguments. */
     Tcl_Obj *CONST objv[],		/* The arguments. */
-    int *idxPtr,			/* OUT: First non-option argument. */
+    int *idxPtr,			/* IN/OUT: 1st [non-]option argument. */
     enum Sass_Context_Type *typePtr,	/* OUT: The context type. */
     struct Sass_Options *optsPtr)	/* IN/OUT: The context options. */
 {
+    *typePtr = SASS_CONTEXT_DATA; /* TODO: Make this work. */
     return TCL_OK;
 }
 
@@ -170,7 +181,277 @@ static int SetResultFromContext(
     Tcl_Interp *interp,			/* Current Tcl interpreter. */
     struct Sass_Context *ctxPtr)	/* IN: Get status/result from here. */
 {
-    return TCL_OK;
+    int code;
+    int rc;
+    const char *zSourceMapFile;
+    Tcl_Obj *listPtr = NULL;
+    Tcl_Obj *objPtr;
+
+    if (interp == NULL) {
+	PACKAGE_TRACE(("SetResultFromContext: no Tcl interpreter\n"));
+	return TCL_ERROR;
+    }
+
+    if (ctxPtr == NULL) {
+	Tcl_AppendResult(interp, "no context\n", NULL);
+	return TCL_ERROR;
+    }
+
+    listPtr = Tcl_NewListObj(0, NULL);
+
+    if (listPtr == NULL) {
+	Tcl_AppendResult(interp, "out of memory: listPtr\n", NULL);
+	code = TCL_ERROR;
+	goto done;
+    }
+
+    Tcl_IncrRefCount(listPtr);
+    objPtr = Tcl_NewStringObj("errorStatus", -1);
+
+    if (objPtr == NULL) {
+	Tcl_AppendResult(interp, "out of memory: errorStatus1\n", NULL);
+	code = TCL_ERROR;
+	goto done;
+    }
+
+    Tcl_IncrRefCount(objPtr);
+    code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+    Tcl_DecrRefCount(objPtr);
+
+    if (code != TCL_OK)
+	goto done;
+
+    rc = sass_context_get_error_status(ctxPtr);
+    objPtr = Tcl_NewIntObj(rc);
+
+    if (objPtr == NULL) {
+	Tcl_AppendResult(interp, "out of memory: errorStatus2\n", NULL);
+	code = TCL_ERROR;
+	goto done;
+    }
+
+    Tcl_IncrRefCount(objPtr);
+    code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+    Tcl_DecrRefCount(objPtr);
+
+    if (code != TCL_OK)
+	goto done;
+
+    if (rc == 0) {
+	objPtr = Tcl_NewStringObj("outputString", -1);
+
+	if (objPtr == NULL) {
+	    Tcl_AppendResult(interp, "out of memory: outputString1\n", NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	Tcl_IncrRefCount(objPtr);
+	code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	if (code != TCL_OK)
+	    goto done;
+
+	objPtr = Tcl_NewStringObj(sass_context_get_output_string(ctxPtr), -1);
+
+	if (objPtr == NULL) {
+	    Tcl_AppendResult(interp, "out of memory: outputString2\n", NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	Tcl_IncrRefCount(objPtr);
+	code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	if (code != TCL_OK)
+	    goto done;
+
+	zSourceMapFile = sass_option_get_source_map_file(ctxPtr);
+
+	if ((zSourceMapFile != NULL) && (strlen(zSourceMapFile) > 0)) {
+	    objPtr = Tcl_NewStringObj("sourceMapString", -1);
+
+	    if (objPtr == NULL) {
+		Tcl_AppendResult(interp,
+		    "out of memory: sourceMapString1\n", NULL);
+
+		code = TCL_ERROR;
+		goto done;
+	    }
+
+	    Tcl_IncrRefCount(objPtr);
+	    code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	    Tcl_DecrRefCount(objPtr);
+
+	    if (code != TCL_OK)
+		goto done;
+
+	    objPtr = Tcl_NewStringObj(
+		sass_context_get_source_map_string(ctxPtr), -1);
+
+	    if (objPtr == NULL) {
+		Tcl_AppendResult(interp,
+		    "out of memory: sourceMapString2\n", NULL);
+
+		code = TCL_ERROR;
+		goto done;
+	    }
+
+	    Tcl_IncrRefCount(objPtr);
+	    code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	    Tcl_DecrRefCount(objPtr);
+
+	    if (code != TCL_OK)
+		goto done;
+	}
+    } else {
+	objPtr = Tcl_NewStringObj("errorMessage", -1);
+
+	if (objPtr == NULL) {
+	    Tcl_AppendResult(interp, "out of memory: errorMessage1\n", NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	Tcl_IncrRefCount(objPtr);
+	code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	if (code != TCL_OK)
+	    goto done;
+
+	objPtr = Tcl_NewStringObj(sass_context_get_error_message(ctxPtr), -1);
+
+	if (objPtr == NULL) {
+	    Tcl_AppendResult(interp, "out of memory: errorMessage2\n", NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	Tcl_IncrRefCount(objPtr);
+	code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	if (code != TCL_OK)
+	    goto done;
+    }
+
+    Tcl_SetObjResult(interp, listPtr);
+
+done:
+    if (listPtr != NULL) {
+	Tcl_DecrRefCount(listPtr);
+	listPtr = NULL;
+    }
+
+    return code;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * CompileForType --
+ *
+ *	This function attempts to create a Sass_Context based on the
+ *	specified Sass_Context_Type, compile it, and then set the Tcl
+ *	interpreter result based on its output.  A script error will
+ *	be generated if the context type is unsupported -OR- context
+ *	creation fails -OR- context compilation fails.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int CompileForType(
+    Tcl_Interp *interp,
+    enum Sass_Context_Type type,
+    struct Sass_Options **pOptsPtr,
+    const char* zSource)
+{
+    int rc;
+
+    if (interp == NULL) {
+	PACKAGE_TRACE(("CompileForType: no Tcl interpreter\n"));
+	return TCL_ERROR;
+    }
+
+    if (pOptsPtr == NULL) {
+	Tcl_AppendResult(interp, "no options pointer\n", NULL);
+	return TCL_ERROR;
+    }
+
+    if (zSource == NULL) {
+	Tcl_AppendResult(interp, "no source\n", NULL);
+	return TCL_ERROR;
+    }
+
+    switch (type) {
+	case SASS_CONTEXT_FILE: {
+	    struct Sass_File_Context *ctxPtr;
+
+	    ctxPtr = sass_make_file_context(zSource);
+
+	    if (ctxPtr == NULL) {
+		Tcl_AppendResult(interp, "out of memory: ctxPtr\n", NULL);
+		return TCL_ERROR;
+	    }
+
+	    if (*pOptsPtr != NULL) {
+		sass_file_context_set_options(ctxPtr, *pOptsPtr);
+		*pOptsPtr = NULL;
+	    }
+
+	    rc = sass_compile_file_context(ctxPtr);
+	    SetResultFromContext(interp, (struct Sass_Context *)ctxPtr);
+	    sass_delete_file_context(ctxPtr);
+	    return (rc == 0) ? TCL_OK : TCL_ERROR;
+	}
+	case SASS_CONTEXT_DATA: {
+	    struct Sass_Data_Context *ctxPtr;
+	    char *zDup = strdup(zSource);
+
+	    if (zDup == NULL) {
+		Tcl_AppendResult(interp, "out of memory: zDup\n", NULL);
+		return TCL_ERROR;
+	    }
+
+	    ctxPtr = sass_make_data_context(zDup);
+
+	    if (ctxPtr == NULL) {
+		free(zDup);
+		Tcl_AppendResult(interp, "out of memory: ctxPtr\n", NULL);
+		return TCL_ERROR;
+	    }
+
+	    if (*pOptsPtr != NULL) {
+		sass_data_context_set_options(ctxPtr, *pOptsPtr);
+		*pOptsPtr = NULL;
+	    }
+
+	    rc = sass_compile_data_context(ctxPtr);
+	    SetResultFromContext(interp, (struct Sass_Context *)ctxPtr);
+	    sass_delete_data_context(ctxPtr);
+	    free(zDup);
+
+	    return (rc == 0) ? TCL_OK : TCL_ERROR;
+	}
+	default: {
+	    char buffer[50] = {0};
+
+	    snprintf(buffer, sizeof(buffer) - 1,
+		"cannot compile, unsupported type %d\n", type);
+
+	    Tcl_AppendResult(interp, buffer, NULL);
+	    return TCL_ERROR;
+	}
+    }
 }
 
 /*
@@ -448,7 +729,8 @@ static int SassObjCmd(
 {
     int code = TCL_OK;
     int option;
-    Tcl_Obj *listPtr;
+    enum Sass_Context_Type type = SASS_CONTEXT_NULL;
+    struct Sass_Options *optsPtr = NULL;
 
     static CONST char *cmdOptions[] = {
 	"compile", "version", (char *) NULL
@@ -457,6 +739,11 @@ static int SassObjCmd(
     enum options {
 	OPT_COMPILE, OPT_VERSION
     };
+
+    if (interp == NULL) {
+	PACKAGE_TRACE(("SassObjCmd: no Tcl interpreter\n"));
+	return TCL_ERROR;
+    }
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
@@ -470,15 +757,43 @@ static int SassObjCmd(
 
     switch ((enum options)option) {
 	case OPT_COMPILE: {
-	    if (objc != 3) {
-		Tcl_WrongNumArgs(interp, 2, objv, "?options? sass");
+	    int index = 2; /* NOTE: Start right after [sass compile]. */
+
+	    if (objc < 3) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?options? source");
 		return TCL_ERROR;
 	    }
 
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	    optsPtr = sass_make_options();
+
+	    if (optsPtr == NULL) {
+		Tcl_AppendResult(interp, "out of memory: optsPtr\n", NULL);
+		code = TCL_ERROR;
+		goto done;
+	    }
+
+	    code = ProcessAllOptions(interp, objc, objv, &index, &type,
+		optsPtr);
+
+	    if (code != TCL_OK)
+		goto done;
+
+	    if (index < 0) {
+		Tcl_WrongNumArgs(interp, 2, objv, "?options? source");
+		code = TCL_ERROR;
+		goto done;
+	    }
+
+	    code = CompileForType(interp, type, &optsPtr,
+		Tcl_GetString(objv[index]));
+
 	    break;
 	}
 	case OPT_VERSION: {
+	    Tcl_Obj *listPtr;
+	    Tcl_Obj *objPtr1;
+	    Tcl_Obj *objPtr2;
+
 	    if (objc != 2) {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
 		return TCL_ERROR;
@@ -488,14 +803,52 @@ static int SassObjCmd(
 
 	    if (listPtr == NULL) {
 		Tcl_AppendResult(interp, "out of memory: listPtr\n", NULL);
+		code = TCL_ERROR;
 		goto done;
 	    }
 
 	    Tcl_IncrRefCount(listPtr);
-	    Tcl_ListObjAppendElement(interp, listPtr,
-		Tcl_NewStringObj("libsass", -1));
-	    Tcl_ListObjAppendElement(interp, listPtr,
-		Tcl_NewStringObj(libsass_version(), -1));
+	    objPtr1 = Tcl_NewStringObj("libsass", -1);
+
+	    if (objPtr1 == NULL) {
+		Tcl_DecrRefCount(listPtr);
+		Tcl_AppendResult(interp, "out of memory: objPtr1\n", NULL);
+		code = TCL_ERROR;
+		goto done;
+	    }
+
+	    Tcl_IncrRefCount(objPtr1);
+	    objPtr2 = Tcl_NewStringObj(libsass_version(), -1);
+
+	    if (objPtr2 == NULL) {
+		Tcl_DecrRefCount(listPtr);
+		Tcl_DecrRefCount(objPtr1);
+		Tcl_AppendResult(interp, "out of memory: objPtr2\n", NULL);
+		code = TCL_ERROR;
+		goto done;
+	    }
+
+	    Tcl_IncrRefCount(objPtr2);
+	    code = Tcl_ListObjAppendElement(interp, listPtr, objPtr1);
+
+	    if (code != TCL_OK) {
+		Tcl_DecrRefCount(listPtr);
+		Tcl_DecrRefCount(objPtr1);
+		Tcl_DecrRefCount(objPtr2);
+		code = TCL_ERROR;
+		goto done;
+	    }
+
+	    code = Tcl_ListObjAppendElement(interp, listPtr, objPtr2);
+
+	    if (code != TCL_OK) {
+		Tcl_DecrRefCount(listPtr);
+		Tcl_DecrRefCount(objPtr1);
+		Tcl_DecrRefCount(objPtr2);
+		code = TCL_ERROR;
+		goto done;
+	    }
+
 	    Tcl_SetObjResult(interp, listPtr);
 	    break;
 	}
@@ -507,6 +860,10 @@ static int SassObjCmd(
     }
 
 done:
+    if (optsPtr != NULL) {
+	free(optsPtr); /* HACK: No official destructor function. */
+	optsPtr = NULL;
+    }
 
     return code;
 }
