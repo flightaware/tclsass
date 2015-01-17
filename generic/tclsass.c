@@ -185,7 +185,7 @@ static int SetResultFromContext(
 {
     int code;
     int rc;
-    struct Sass_Context *optsPtr;
+    struct Sass_Options *optsPtr;
     const char *zSourceMapFile;
     Tcl_Obj *listPtr = NULL;
     Tcl_Obj *objPtr;
