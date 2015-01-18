@@ -78,4 +78,17 @@
   #define TCL_UNLOAD_FROM_INIT			(1<<2)
 #endif
 
+/*
+ *
+ */
+
+typedef void (tcl_sass_any) ();
+typedef void (tcl_sass_set_integer) (struct Sass_Options *, int);
+
+typedef void (tcl_sass_set_output_style) (struct Sass_Options *,
+	enum Sass_Output_Style);
+
+typedef void (tcl_sass_set_boolean) (struct Sass_Options *, bool);
+typedef void (tcl_sass_set_string) (struct Sass_Options *, const char *);
+
 #endif /* _TCLSASS_INT_H_ */
