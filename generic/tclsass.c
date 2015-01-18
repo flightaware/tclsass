@@ -107,12 +107,12 @@ static int GetContextTypeFromObj(
 	return TCL_ERROR;
     }
 
-    if ((length == 4) && (strcmp(zType, "data") == 0)) {
+    if (CheckString(length, zType, "data")) {
 	*typePtr = SASS_CONTEXT_DATA;
 	return TCL_OK;
     }
 
-    if ((length == 4) && (strcmp(zType, "file") == 0)) {
+    if (CheckString(length, zType, "file")) {
 	*typePtr = SASS_CONTEXT_FILE;
 	return TCL_OK;
     }
@@ -180,22 +180,22 @@ static int GetOutputStyleFromObj(
 	return TCL_ERROR;
     }
 
-    if ((length == 6) && (strcmp(zStyle, "nested") == 0)) {
+    if (CheckString(length, zStyle, "nested")) {
 	*stylePtr = SASS_STYLE_NESTED;
 	return TCL_OK;
     }
 
-    if ((length == 8) && (strcmp(zStyle, "expanded") == 0)) {
+    if (CheckString(length, zStyle, "expanded")) {
 	*stylePtr = SASS_STYLE_EXPANDED;
 	return TCL_OK;
     }
 
-    if ((length == 7) && (strcmp(zStyle, "compact") == 0)) {
+    if (CheckString(length, zStyle, "compact")) {
 	*stylePtr = SASS_STYLE_COMPACT;
 	return TCL_OK;
     }
 
-    if ((length == 10) && (strcmp(zStyle, "compressed") == 0)) {
+    if (CheckString(length, zStyle, "compressed")) {
 	*stylePtr = SASS_STYLE_COMPRESSED;
 	return TCL_OK;
     }
@@ -205,24 +205,6 @@ static int GetOutputStyleFromObj(
 	"or compressed\n", NULL);
 
     return TCL_ERROR;
-}
-
-static int CheckNameAndGetValue(
-    Tcl_Interp *interp,			/* Current Tcl interpreter. */
-    int objc,				/* Number of arguments. */
-    Tcl_Obj *CONST objv[],		/* The array of arguments. */
-    int *idxPtr,			/* IN/OUT: Arg before/after value. */
-    struct Sass_Options *optsPtr)	/* IN/OUT: The context options. */
-{
-    if (interp == NULL) {
-	PACKAGE_TRACE(("CheckNameAndGetValue: no Tcl interpreter\n"));
-	return TCL_ERROR;
-    }
-
-
-
-
-    return TCL_OK;
 }
 
 /*
@@ -308,12 +290,12 @@ static int ProcessContextOptions(
 	    return TCL_ERROR;
 	}
 
-	if ((length == 2) && (strcmp(zArg, "--") == 0)) {
+	if (CheckString(length, zArg, "--")) {
 	    *idxPtr = index;
 	    return TCL_OK;
 	}
 
-	if ((length == 5) && (strcmp(zArg, "-type") == 0)) {
+	if (CheckString(length, zArg, "-type")) {
 	    index++;
 	    if (index >= objc) {
 		Tcl_AppendResult(interp, "missing context type\n", NULL);
@@ -326,7 +308,7 @@ static int ProcessContextOptions(
 	    continue;
 	}
 
-	if ((length == 8) && (strcmp(zArg, "-options") == 0)) {
+	if (CheckString(length, zArg, "-options")) {
 	    int dictObjc;
 	    Tcl_Obj **dictObjv;
 	    int dictIndex;
@@ -354,7 +336,7 @@ static int ProcessContextOptions(
 		    Tcl_AppendResult(interp, "bad dictionary string\n", NULL);
 		    return TCL_ERROR;
 		}
-		if ((length == 9) && (strcmp(zArg, "precision") == 0)) {
+		if (CheckString(length, zArg, "precision")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    if (Tcl_GetIntFromObj(interp, objPtr, &intValue) != TCL_OK) {
 			return TCL_ERROR;
@@ -362,7 +344,7 @@ static int ProcessContextOptions(
 		    sass_option_set_precision(optsPtr, intValue);
 		    continue;
 		}
-		if ((length == 12) && (strcmp(zArg, "output_style") == 0)) {
+		if (CheckString(length, zArg, "output_style")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    if (GetOutputStyleFromObj(interp, objPtr, &styleValue) != TCL_OK) {
 			return TCL_ERROR;
@@ -370,7 +352,7 @@ static int ProcessContextOptions(
 		    sass_option_set_output_style(optsPtr, styleValue);
 		    continue;
 		}
-		if ((length == 15) && (strcmp(zArg, "source_comments") == 0)) {
+		if (CheckString(length, zArg, "source_comments")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
 			return TCL_ERROR;
@@ -378,7 +360,7 @@ static int ProcessContextOptions(
 		    sass_option_set_source_comments(optsPtr, boolValue);
 		    continue;
 		}
-		if ((length == 16) && (strcmp(zArg, "source_map_embed") == 0)) {
+		if (CheckString(length, zArg, "source_map_embed")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
 			return TCL_ERROR;
@@ -386,7 +368,7 @@ static int ProcessContextOptions(
 		    sass_option_set_source_map_embed(optsPtr, boolValue);
 		    continue;
 		}
-		if ((length == 19) && (strcmp(zArg, "source_map_contents") == 0)) {
+		if (CheckString(length, zArg, "source_map_contents")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
 			return TCL_ERROR;
@@ -394,7 +376,7 @@ static int ProcessContextOptions(
 		    sass_option_set_source_map_contents(optsPtr, boolValue);
 		    continue;
 		}
-		if ((length == 19) && (strcmp(zArg, "omit_source_map_url") == 0)) {
+		if (CheckString(length, zArg, "omit_source_map_url")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
 			return TCL_ERROR;
@@ -402,7 +384,7 @@ static int ProcessContextOptions(
 		    sass_option_set_omit_source_map_url(optsPtr, boolValue);
 		    continue;
 		}
-		if ((length == 22) && (strcmp(zArg, "is_indented_syntax_src") == 0)) {
+		if (CheckString(length, zArg, "is_indented_syntax_src")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
 			return TCL_ERROR;
@@ -410,7 +392,7 @@ static int ProcessContextOptions(
 		    sass_option_set_is_indented_syntax_src(optsPtr, boolValue);
 		    continue;
 		}
-		if ((length == 6) && (strcmp(zArg, "indent") == 0)) {
+		if (CheckString(length, zArg, "indent")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    zValue = Tcl_GetStringFromObj(objPtr, &length);
 		    if ((zValue == NULL) || (length < 0)) {
@@ -420,7 +402,7 @@ static int ProcessContextOptions(
 		    sass_option_set_indent(optsPtr, zValue);
 		    continue;
 		}
-		if ((length == 8) && (strcmp(zArg, "linefeed") == 0)) {
+		if (CheckString(length, zArg, "linefeed")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    zValue = Tcl_GetStringFromObj(objPtr, &length);
 		    if ((zValue == NULL) || (length < 0)) {
@@ -430,7 +412,7 @@ static int ProcessContextOptions(
 		    sass_option_set_linefeed(optsPtr, zValue);
 		    continue;
 		}
-		if ((length == 10) && (strcmp(zArg, "input_path") == 0)) {
+		if (CheckString(length, zArg, "input_path")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    zValue = Tcl_GetStringFromObj(objPtr, &length);
 		    if ((zValue == NULL) || (length < 0)) {
@@ -440,7 +422,7 @@ static int ProcessContextOptions(
 		    sass_option_set_input_path(optsPtr, zValue);
 		    continue;
 		}
-		if ((length == 11) && (strcmp(zArg, "output_path") == 0)) {
+		if (CheckString(length, zArg, "output_path")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    zValue = Tcl_GetStringFromObj(objPtr, &length);
 		    if ((zValue == NULL) || (length < 0)) {
@@ -450,7 +432,7 @@ static int ProcessContextOptions(
 		    sass_option_set_output_path(optsPtr, zValue);
 		    continue;
 		}
-		if ((length == 10) && (strcmp(zArg, "image_path") == 0)) {
+		if (CheckString(length, zArg, "image_path")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    zValue = Tcl_GetStringFromObj(objPtr, &length);
 		    if ((zValue == NULL) || (length < 0)) {
@@ -460,7 +442,7 @@ static int ProcessContextOptions(
 		    sass_option_set_image_path(optsPtr, zValue);
 		    continue;
 		}
-		if ((length == 12) && (strcmp(zArg, "include_path") == 0)) {
+		if (CheckString(length, zArg, "include_path")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    zValue = Tcl_GetStringFromObj(objPtr, &length);
 		    if ((zValue == NULL) || (length < 0)) {
@@ -470,7 +452,7 @@ static int ProcessContextOptions(
 		    sass_option_set_include_path(optsPtr, zValue);
 		    continue;
 		}
-		if ((length == 15) && (strcmp(zArg, "source_map_file") == 0)) {
+		if (CheckString(length, zArg, "source_map_file")) {
 		    objPtr = dictObjv[dictIndex + 1];
 		    zValue = Tcl_GetStringFromObj(objPtr, &length);
 		    if ((zValue == NULL) || (length < 0)) {

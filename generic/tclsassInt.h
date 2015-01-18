@@ -79,16 +79,12 @@
 #endif
 
 /*
- *
+ * NOTE: This macro is used to slightly simplify the option/argument checking
+ *       against various "well-known" option names and dictionary keys passed
+ *       as literal strings.
  */
 
-typedef void (tcl_sass_any) ();
-typedef void (tcl_sass_set_integer) (struct Sass_Options *, int);
-
-typedef void (tcl_sass_set_output_style) (struct Sass_Options *,
-	enum Sass_Output_Style);
-
-typedef void (tcl_sass_set_boolean) (struct Sass_Options *, bool);
-typedef void (tcl_sass_set_string) (struct Sass_Options *, const char *);
+#define CheckString(len,arg,lit) \
+    (((len) == (sizeof((lit)) - 1)) && (strcmp((arg), (lit)) == 0))
 
 #endif /* _TCLSASS_INT_H_ */
