@@ -721,8 +721,6 @@ static int CompileForType(
     struct Sass_Options **pOptsPtr,
     const char* zSource)
 {
-    int rc;
-
     if (interp == NULL) {
 	PACKAGE_TRACE(("CompileForType: no Tcl interpreter\n"));
 	return TCL_ERROR;
@@ -754,10 +752,11 @@ static int CompileForType(
 		*pOptsPtr = NULL;
 	    }
 
-	    rc = sass_compile_file_context(ctxPtr);
+	    sass_compile_file_context(ctxPtr);
 	    SetResultFromContext(interp, (struct Sass_Context *)ctxPtr);
 	    sass_delete_file_context(ctxPtr);
-	    return (rc == 0) ? TCL_OK : TCL_ERROR;
+
+	    return TCL_OK;
 	}
 	case SASS_CONTEXT_DATA: {
 	    struct Sass_Data_Context *ctxPtr;
@@ -781,12 +780,12 @@ static int CompileForType(
 		*pOptsPtr = NULL;
 	    }
 
-	    rc = sass_compile_data_context(ctxPtr);
+	    sass_compile_data_context(ctxPtr);
 	    SetResultFromContext(interp, (struct Sass_Context *)ctxPtr);
 	    sass_delete_data_context(ctxPtr);
 	    free(zDup);
 
-	    return (rc == 0) ? TCL_OK : TCL_ERROR;
+	    return TCL_OK;
 	}
 	default: {
 	    char buffer[50] = {0};
