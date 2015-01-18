@@ -290,7 +290,7 @@ static int ProcessContextOptions(
     *typePtr = SASS_CONTEXT_DATA; /* TODO: Good default? */
 
     for (index = *idxPtr; index < objc; index++) {
-	Tcl_Obj objPtr;
+	Tcl_Obj *objPtr;
 	const char *zArg;
 	int length;
 
@@ -328,7 +328,7 @@ static int ProcessContextOptions(
 
 	if ((length == 8) && (strcmp(zArg, "-options") == 0)) {
 	    int dictObjc;
-	    Tcl_Obj *dictObjv[];
+	    Tcl_Obj **dictObjv;
 	    int dictIndex;
 	    index++;
 	    if (index >= objc) {
@@ -336,7 +336,7 @@ static int ProcessContextOptions(
 		return TCL_ERROR;
 	    }
 	    objPtr = objv[index];
-	    if (Tcl_ListObjGetElements(interp, objPtr, &dictObjc, &dictObjv)) != TCL_OK) {
+	    if (Tcl_ListObjGetElements(interp, objPtr, &dictObjc, &dictObjv) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if ((dictObjc % 2) != 0) {
