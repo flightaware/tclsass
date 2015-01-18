@@ -328,7 +328,6 @@ static int ProcessContextOptions(
 	    for (dictIndex = 0; dictIndex < dictObjc; dictIndex += 2) {
 		int intValue;
 		enum Sass_Output_Style styleValue;
-		bool boolValue;
 		const char *zValue;
 		objPtr = dictObjv[dictIndex];
 		zArg = Tcl_GetStringFromObj(objPtr, &length);
@@ -354,42 +353,42 @@ static int ProcessContextOptions(
 		}
 		if (CheckString(length, zArg, "source_comments")) {
 		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
+		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
 			return TCL_ERROR;
 		    }
-		    sass_option_set_source_comments(optsPtr, boolValue);
+		    sass_option_set_source_comments(optsPtr, (bool)intValue);
 		    continue;
 		}
 		if (CheckString(length, zArg, "source_map_embed")) {
 		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
+		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
 			return TCL_ERROR;
 		    }
-		    sass_option_set_source_map_embed(optsPtr, boolValue);
+		    sass_option_set_source_map_embed(optsPtr, (bool)intValue);
 		    continue;
 		}
 		if (CheckString(length, zArg, "source_map_contents")) {
 		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
+		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
 			return TCL_ERROR;
 		    }
-		    sass_option_set_source_map_contents(optsPtr, boolValue);
+		    sass_option_set_source_map_contents(optsPtr, (bool)intValue);
 		    continue;
 		}
 		if (CheckString(length, zArg, "omit_source_map_url")) {
 		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
+		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
 			return TCL_ERROR;
 		    }
-		    sass_option_set_omit_source_map_url(optsPtr, boolValue);
+		    sass_option_set_omit_source_map_url(optsPtr, (bool)intValue);
 		    continue;
 		}
 		if (CheckString(length, zArg, "is_indented_syntax_src")) {
 		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &boolValue) != TCL_OK) {
+		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
 			return TCL_ERROR;
 		    }
-		    sass_option_set_is_indented_syntax_src(optsPtr, boolValue);
+		    sass_option_set_is_indented_syntax_src(optsPtr, (bool)intValue);
 		    continue;
 		}
 		if (CheckString(length, zArg, "indent")) {
