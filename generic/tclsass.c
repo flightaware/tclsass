@@ -33,10 +33,15 @@ enum Sass_Context_Type {
  * NOTE: Private functions defined in this file.
  */
 
+static int		GetStringFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+			    int *pLength, char **pzValue);
 static int		GetContextTypeFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, enum Sass_Context_Type *typePtr);
 static int		GetOutputStyleFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, enum Sass_Output_Style *stylePtr);
+static int		FindAndSetContextOption(Tcl_Interp *interp,
+			    int nameLength, const char *zName, Tcl_Obj *objPtr,
+			    struct Sass_Options *optsPtr);
 static int		ProcessContextOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *CONST objv[], int *idxPtr,
 			    enum Sass_Context_Type *typePtr,
@@ -51,6 +56,60 @@ static void		SassExitProc(ClientData clientData);
 static int		SassObjCmd(ClientData clientData, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *CONST objv[]);
 static void		SassObjCmdDeleteProc(ClientData clientData);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetStringFromObj --
+ *
+ *	This function attempts to get the string representation of the
+ *	specified Tcl object.  Then, it validates that the returned
+ *	string pointer and length.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int GetStringFromObj(
+    Tcl_Interp *interp,			/* Current Tcl interpreter. */
+    Tcl_Obj *objPtr,			/* IN: The source object. */
+    int *pLength,			/* OUT: Length of the string. */
+    char **pzValue)			/* OUT: The string value. */
+{
+    if (interp == NULL) {
+	PACKAGE_TRACE(("GetStringFromObj: no Tcl interpreter\n"));
+	return TCL_ERROR;
+    }
+
+    if (objPtr == NULL) {
+	Tcl_AppendResult(interp, "no string object\n", NULL);
+	return TCL_ERROR;
+    }
+
+    if (pLength == NULL) {
+	Tcl_AppendResult(interp, "no string length pointer\n", NULL);
+	return TCL_ERROR;
+    }
+
+    if (pzValue == NULL) {
+	Tcl_AppendResult(interp, "no string pointer\n", NULL);
+	return TCL_ERROR;
+    }
+
+    *pzValue = Tcl_GetStringFromObj(objPtr, pLength);
+
+    if ((*pzValue == NULL) || (*pLength < 0)) {
+	Tcl_AppendResult(interp, "bad string or length\n", NULL);
+	return TCL_ERROR;
+    }
+
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -82,8 +141,9 @@ static int GetContextTypeFromObj(
     Tcl_Obj *objPtr,			/* The string to convert. */
     enum Sass_Context_Type *typePtr)	/* OUT: The context type. */
 {
-    const char *zType;
-    int length;
+    int code;
+    int typeLength;
+    char *zType;
 
     if (interp == NULL) {
 	PACKAGE_TRACE(("GetContextTypeFromObj: no Tcl interpreter\n"));
@@ -100,19 +160,17 @@ static int GetContextTypeFromObj(
 	return TCL_ERROR;
     }
 
-    zType = Tcl_GetStringFromObj(objPtr, &length);
+    code = GetStringFromObj(interp, objPtr, &typeLength, &zType);
 
-    if ((zType == NULL) || (length < 0)) {
-	Tcl_AppendResult(interp, "bad context type string\n", NULL);
-	return TCL_ERROR;
-    }
+    if (code != TCL_OK)
+	return code;
 
-    if (CheckString(length, zType, "data")) {
+    if (CheckString(typeLength, zType, "data")) {
 	*typePtr = SASS_CONTEXT_DATA;
 	return TCL_OK;
     }
 
-    if (CheckString(length, zType, "file")) {
+    if (CheckString(typeLength, zType, "file")) {
 	*typePtr = SASS_CONTEXT_FILE;
 	return TCL_OK;
     }
@@ -155,8 +213,9 @@ static int GetOutputStyleFromObj(
     Tcl_Obj *objPtr,			/* The string to convert. */
     enum Sass_Output_Style *stylePtr)	/* OUT: The output style. */
 {
-    const char *zStyle;
-    int length;
+    int code;
+    int styleLength;
+    char *zStyle;
 
     if (interp == NULL) {
 	PACKAGE_TRACE(("GetOutputStyleFromObj: no Tcl interpreter\n"));
@@ -173,29 +232,27 @@ static int GetOutputStyleFromObj(
 	return TCL_ERROR;
     }
 
-    zStyle = Tcl_GetStringFromObj(objPtr, &length);
+    code = GetStringFromObj(interp, objPtr, &styleLength, &zStyle);
 
-    if ((zStyle == NULL) || (length < 0)) {
-	Tcl_AppendResult(interp, "bad output style string\n", NULL);
-	return TCL_ERROR;
-    }
+    if (code != TCL_OK)
+	return code;
 
-    if (CheckString(length, zStyle, "nested")) {
+    if (CheckString(styleLength, zStyle, "nested")) {
 	*stylePtr = SASS_STYLE_NESTED;
 	return TCL_OK;
     }
 
-    if (CheckString(length, zStyle, "expanded")) {
+    if (CheckString(styleLength, zStyle, "expanded")) {
 	*stylePtr = SASS_STYLE_EXPANDED;
 	return TCL_OK;
     }
 
-    if (CheckString(length, zStyle, "compact")) {
+    if (CheckString(styleLength, zStyle, "compact")) {
 	*stylePtr = SASS_STYLE_COMPACT;
 	return TCL_OK;
     }
 
-    if (CheckString(length, zStyle, "compressed")) {
+    if (CheckString(styleLength, zStyle, "compressed")) {
 	*stylePtr = SASS_STYLE_COMPRESSED;
 	return TCL_OK;
     }
@@ -205,6 +262,223 @@ static int GetOutputStyleFromObj(
 	"or compressed\n", NULL);
 
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindAndSetContextOption --
+ *
+ *	This function attempts to locate the specified Sass context
+ *	option and set its value based on the specified Tcl object.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int FindAndSetContextOption(
+    Tcl_Interp *interp,			/* Current Tcl interpreter. */
+    int nameLength,			/* IN: Length of option name. */
+    const char *zName,			/* IN: The option name. */
+    Tcl_Obj *objPtr,			/* IN: The option value. */
+    struct Sass_Options *optsPtr)	/* IN/OUT: The context options. */
+{
+    static struct sOptions {
+	const char *zName;              /* Name of the option. */
+	fn_get_any *xGetValue;          /* Tcl C API to get value. */
+	fn_set_any *xSetOption;         /* Sass C API to set value. */
+    } aOptions[] = {{
+	/* zName:      */ "precision",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "output_style",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "source_comments",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "source_map_embed",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "source_map_contents",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "omit_source_map_url",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "is_indented_syntax_src",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "indent",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "linefeed",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "input_path",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "output_path",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "image_path",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "include_path",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }, {
+	/* zName:      */ "source_map_file",
+	/* xGetValue:  */ NULL,
+	/* xSetOption: */ NULL
+    }};
+
+    int code = TCL_ERROR;
+    int bFound = 0;
+    Tcl_Obj *namesPtr;
+    int index;
+
+    if (interp == NULL) {
+	PACKAGE_TRACE(("FindAndSetContextOption: no Tcl interpreter\n"));
+	return TCL_ERROR;
+    }
+
+    if (zName == NULL) {
+	Tcl_AppendResult(interp, "no option name\n", NULL);
+	return TCL_ERROR;
+    }
+
+    if (objPtr == NULL) {
+	Tcl_AppendResult(interp, "no option value\n", NULL);
+	return TCL_ERROR;
+    }
+
+    if (optsPtr == NULL) {
+	Tcl_AppendResult(interp, "no options pointer\n", NULL);
+	return TCL_ERROR;
+    }
+
+    aOptions[0].xGetValue = (fn_get_any *)Tcl_GetIntFromObj;
+    aOptions[0].xSetOption = (fn_set_any *)sass_option_set_precision;
+    aOptions[1].xGetValue = (fn_get_any *)GetOutputStyleFromObj;
+    aOptions[1].xSetOption = (fn_set_any *)sass_option_set_output_style;
+    aOptions[2].xGetValue = (fn_get_any *)Tcl_GetBooleanFromObj;
+    aOptions[2].xSetOption = (fn_set_any *)sass_option_set_source_comments;
+    aOptions[3].xGetValue = (fn_get_any *)Tcl_GetBooleanFromObj;
+    aOptions[3].xSetOption = (fn_set_any *)sass_option_set_source_map_embed;
+    aOptions[4].xGetValue = (fn_get_any *)Tcl_GetBooleanFromObj;
+    aOptions[4].xSetOption = (fn_set_any *)sass_option_set_source_map_contents;
+    aOptions[5].xGetValue = (fn_get_any *)Tcl_GetBooleanFromObj;
+    aOptions[5].xSetOption = (fn_set_any *)sass_option_set_omit_source_map_url;
+    aOptions[6].xGetValue = (fn_get_any *)Tcl_GetBooleanFromObj;
+    aOptions[6].xSetOption = (fn_set_any *)sass_option_set_is_indented_syntax_src;
+    aOptions[7].xGetValue = (fn_get_any *)GetStringFromObj;
+    aOptions[7].xSetOption = (fn_set_any *)sass_option_set_indent;
+    aOptions[8].xGetValue = (fn_get_any *)GetStringFromObj;
+    aOptions[8].xSetOption = (fn_set_any *)sass_option_set_linefeed;
+    aOptions[9].xGetValue = (fn_get_any *)GetStringFromObj;
+    aOptions[9].xSetOption = (fn_set_any *)sass_option_set_input_path;
+    aOptions[10].xGetValue = (fn_get_any *)GetStringFromObj;
+    aOptions[10].xSetOption = (fn_set_any *)sass_option_set_output_path;
+    aOptions[11].xGetValue = (fn_get_any *)GetStringFromObj;
+    aOptions[11].xSetOption = (fn_set_any *)sass_option_set_image_path;
+    aOptions[12].xGetValue = (fn_get_any *)GetStringFromObj;
+    aOptions[12].xSetOption = (fn_set_any *)sass_option_set_include_path;
+    aOptions[13].xGetValue = (fn_get_any *)GetStringFromObj;
+    aOptions[13].xSetOption = (fn_set_any *)sass_option_set_source_map_file;
+
+    namesPtr = Tcl_NewObj();
+
+    if (namesPtr == NULL) {
+	Tcl_AppendResult(interp, "out of memory: namesPtr\n", NULL);
+	return TCL_ERROR;
+    }
+
+    Tcl_IncrRefCount(namesPtr);
+
+    for (index = 0; index < ArraySize(aOptions); index++) {
+	if (CheckString(nameLength, zName, aOptions[index].zName)) {
+	    fn_get_any *xGetValue = aOptions[index].xGetValue;
+	    fn_set_any *xSetOption = aOptions[index].xSetOption;
+
+	    if (xGetValue == Tcl_GetBooleanFromObj) {
+		int iValue;
+
+		if (xGetValue(interp, objPtr, &iValue) == TCL_OK) {
+		    xSetOption(optsPtr, (bool)iValue);
+		    code = TCL_OK;
+                }
+	    } else if (xGetValue == Tcl_GetIntFromObj) {
+		int iValue;
+
+		if (xGetValue(interp, objPtr, &iValue) == TCL_OK) {
+		    xSetOption(optsPtr, iValue);
+		    code = TCL_OK;
+                }
+	    } else if (xGetValue == GetOutputStyleFromObj) {
+		enum Sass_Output_Style eValue;
+
+		if (xGetValue(interp, objPtr, &eValue) == TCL_OK) {
+		    xSetOption(optsPtr, eValue);
+		    code = TCL_OK;
+                }
+	    } else if (xGetValue == GetStringFromObj) {
+		int valueLength;
+		char *zValue;
+
+		if (xGetValue(interp, objPtr, &valueLength,
+			&zValue) == TCL_OK) {
+		    xSetOption(optsPtr, zValue);
+		    code = TCL_OK;
+		}
+	    } else {
+		Tcl_AppendResult(interp, "unsupported option type\n", NULL);
+	    }
+
+	    bFound = 1;
+	    break;
+	} else {
+	    if (index > 0) {
+		Tcl_AppendToObj(namesPtr, ", ", -1);
+	    }
+
+	    if (index == ArraySize(aOptions) - 1) {
+		Tcl_AppendToObj(namesPtr, "or ", -1);
+	    }
+
+	    Tcl_AppendToObj(namesPtr, aOptions[index].zName, -1);
+	}
+    }
+
+    if (!bFound) {
+	Tcl_Obj *resultPtr = Tcl_GetObjResult(interp);
+
+	if (resultPtr != NULL) {
+	    Tcl_AppendToObj(resultPtr, "unknown option, must be: ", -1);
+	    Tcl_AppendObjToObj(resultPtr, namesPtr);
+	    Tcl_AppendToObj(resultPtr, "\n", -1);
+        }
+    }
+
+    Tcl_DecrRefCount(namesPtr);
+    return code;
 }
 
 /*
@@ -272,205 +546,79 @@ static int ProcessContextOptions(
     *typePtr = SASS_CONTEXT_DATA; /* TODO: Good default? */
 
     for (index = *idxPtr; index < objc; index++) {
-	Tcl_Obj *objPtr;
-	const char *zArg;
-	int length;
+	int code;
+	int argLength;
+	char *zArg;
 
-	objPtr = objv[index];
-
-	if (objPtr == NULL) {
-	    Tcl_AppendResult(interp, "bad argument object\n", NULL);
+	if (objv[index] == NULL) {
+	    Tcl_AppendResult(interp, "no argument object\n", NULL);
 	    return TCL_ERROR;
 	}
 
-	zArg = Tcl_GetStringFromObj(objPtr, &length);
+	code = GetStringFromObj(interp, objv[index], &argLength, &zArg);
 
-	if ((zArg == NULL) || (length < 0)) {
-	    Tcl_AppendResult(interp, "bad argument string\n", NULL);
-	    return TCL_ERROR;
-	}
+	if (code != TCL_OK)
+	    return code;
 
-	if (CheckString(length, zArg, "--")) {
+	if (CheckString(argLength, zArg, "--")) {
 	    *idxPtr = index;
 	    return TCL_OK;
 	}
 
-	if (CheckString(length, zArg, "-type")) {
+	if (CheckString(argLength, zArg, "-type")) {
 	    index++;
+
 	    if (index >= objc) {
 		Tcl_AppendResult(interp, "missing context type\n", NULL);
 		return TCL_ERROR;
 	    }
-	    objPtr = objv[index];
-	    if (GetContextTypeFromObj(interp, objPtr, typePtr) != TCL_OK) {
+
+	    if (GetContextTypeFromObj(interp, objv[index], typePtr) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+
 	    continue;
 	}
 
-	if (CheckString(length, zArg, "-options")) {
+	if (CheckString(argLength, zArg, "-options")) {
 	    int dictObjc;
 	    Tcl_Obj **dictObjv;
 	    int dictIndex;
+
 	    index++;
+
 	    if (index >= objc) {
 		Tcl_AppendResult(interp, "missing options dictionary\n", NULL);
 		return TCL_ERROR;
 	    }
-	    objPtr = objv[index];
-	    if (Tcl_ListObjGetElements(interp, objPtr, &dictObjc, &dictObjv) != TCL_OK) {
+
+	    if (Tcl_ListObjGetElements(interp, objv[index], &dictObjc,
+		    &dictObjv) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+
 	    if ((dictObjc % 2) != 0) {
 		Tcl_AppendResult(interp, "malformed dictionary\n", NULL);
 		return TCL_ERROR;
 	    }
+
 	    for (dictIndex = 0; dictIndex < dictObjc; dictIndex += 2) {
-		int intValue;
-		enum Sass_Output_Style styleValue;
-		const char *zValue;
-		objPtr = dictObjv[dictIndex];
-		zArg = Tcl_GetStringFromObj(objPtr, &length);
-		if ((zArg == NULL) || (length < 0)) {
-		    Tcl_AppendResult(interp, "bad dictionary string\n", NULL);
-		    return TCL_ERROR;
-		}
-		if (CheckString(length, zArg, "precision")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetIntFromObj(interp, objPtr, &intValue) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		    sass_option_set_precision(optsPtr, intValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "output_style")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    if (GetOutputStyleFromObj(interp, objPtr, &styleValue) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		    sass_option_set_output_style(optsPtr, styleValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "source_comments")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		    sass_option_set_source_comments(optsPtr, (bool)intValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "source_map_embed")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		    sass_option_set_source_map_embed(optsPtr, (bool)intValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "source_map_contents")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		    sass_option_set_source_map_contents(optsPtr, (bool)intValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "omit_source_map_url")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		    sass_option_set_omit_source_map_url(optsPtr, (bool)intValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "is_indented_syntax_src")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    if (Tcl_GetBooleanFromObj(interp, objPtr, &intValue) != TCL_OK) {
-			return TCL_ERROR;
-		    }
-		    sass_option_set_is_indented_syntax_src(optsPtr, (bool)intValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "indent")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    zValue = Tcl_GetStringFromObj(objPtr, &length);
-		    if ((zValue == NULL) || (length < 0)) {
-			Tcl_AppendResult(interp, "bad value string\n", NULL);
-			return TCL_ERROR;
-		    }
-		    sass_option_set_indent(optsPtr, zValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "linefeed")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    zValue = Tcl_GetStringFromObj(objPtr, &length);
-		    if ((zValue == NULL) || (length < 0)) {
-			Tcl_AppendResult(interp, "bad value string\n", NULL);
-			return TCL_ERROR;
-		    }
-		    sass_option_set_linefeed(optsPtr, zValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "input_path")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    zValue = Tcl_GetStringFromObj(objPtr, &length);
-		    if ((zValue == NULL) || (length < 0)) {
-			Tcl_AppendResult(interp, "bad value string\n", NULL);
-			return TCL_ERROR;
-		    }
-		    sass_option_set_input_path(optsPtr, zValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "output_path")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    zValue = Tcl_GetStringFromObj(objPtr, &length);
-		    if ((zValue == NULL) || (length < 0)) {
-			Tcl_AppendResult(interp, "bad value string\n", NULL);
-			return TCL_ERROR;
-		    }
-		    sass_option_set_output_path(optsPtr, zValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "image_path")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    zValue = Tcl_GetStringFromObj(objPtr, &length);
-		    if ((zValue == NULL) || (length < 0)) {
-			Tcl_AppendResult(interp, "bad value string\n", NULL);
-			return TCL_ERROR;
-		    }
-		    sass_option_set_image_path(optsPtr, zValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "include_path")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    zValue = Tcl_GetStringFromObj(objPtr, &length);
-		    if ((zValue == NULL) || (length < 0)) {
-			Tcl_AppendResult(interp, "bad value string\n", NULL);
-			return TCL_ERROR;
-		    }
-		    sass_option_set_include_path(optsPtr, zValue);
-		    continue;
-		}
-		if (CheckString(length, zArg, "source_map_file")) {
-		    objPtr = dictObjv[dictIndex + 1];
-		    zValue = Tcl_GetStringFromObj(objPtr, &length);
-		    if ((zValue == NULL) || (length < 0)) {
-			Tcl_AppendResult(interp, "bad value string\n", NULL);
-			return TCL_ERROR;
-		    }
-		    sass_option_set_source_map_file(optsPtr, zValue);
-		    continue;
-		}
+		int nameLength;
+		char *zName;
 
-		Tcl_AppendResult(interp, "unsupported option, must be: "
-		    "precision, output_style, source_comments, "
-		    "source_map_embed, source_map_contents, "
-		    "omit_source_map_url, is_indented_syntax_src, indent, "
-		    "linefeed, input_path, output_path, image_path, "
-		    "include_path, or source_map_file\n", NULL);
+		code = GetStringFromObj(interp, dictObjv[dictIndex],
+		    &nameLength, &zName);
 
-		return TCL_ERROR;
+		if (code != TCL_OK)
+		    return code;
+
+		code = FindAndSetContextOption(interp, nameLength, zName,
+		    dictObjv[dictIndex + 1], optsPtr);
+
+		if (code != TCL_OK)
+		    return code;
 	    }
+
 	    continue;
 	}
 
@@ -1058,7 +1206,7 @@ static int SassObjCmd(
     enum Sass_Context_Type type = SASS_CONTEXT_NULL;
     struct Sass_Options *optsPtr = NULL;
 
-    static CONST char *cmdOptions[] = {
+    static const char *cmdOptions[] = {
 	"compile", "version", (char *) NULL
     };
 
@@ -1083,7 +1231,7 @@ static int SassObjCmd(
 
     switch ((enum options)option) {
 	case OPT_COMPILE: {
-	    int index = 2; /* NOTE: Start right after [sass compile]. */
+	    int index = 2; /* NOTE: Start right after "sass compile". */
 
 	    if (objc < 3) {
 		Tcl_WrongNumArgs(interp, 2, objv, "?options? source");

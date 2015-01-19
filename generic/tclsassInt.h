@@ -79,12 +79,26 @@
 #endif
 
 /*
- * NOTE: This macro is used to slightly simplify the option/argument checking
- *       against various "well-known" option names and dictionary keys passed
- *       as literal strings.
+ * NOTE: This macro returns the number of elements in an array.
  */
 
-#define CheckString(len,arg,lit) \
-    (((len) == (sizeof((lit)) - 1)) && (strcmp((arg), (lit)) == 0))
+#define ArraySize(X)				((int)(sizeof(X)/sizeof(X[0])))
+
+/*
+ * NOTE: This macro is used to slightly simplify the option/argument checking
+ *       against various "well-known" option names and dictionary keys passed
+ *       as constant strings.
+ */
+
+#define CheckString(len,arg,str) \
+    (((len) == strlen((str))) && (strcmp((arg), (str)) == 0))
+
+/*
+ * NOTE: These are semi-generic function types, used for interfacing with
+ *       various functions from the Tcl C API and the Sass C API.
+ */
+
+typedef int (fn_get_any) ();
+typedef void (fn_set_any) ();
 
 #endif /* _TCLSASS_INT_H_ */

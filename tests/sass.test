@@ -14,6 +14,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import ::tcltest::*
 }
 
+set path [file dirname [info script]]
 package require sass
 
 ###############################################################################
@@ -46,7 +47,7 @@ if {[llength [info commands getDictValue]] == 0} then {
 
 ###############################################################################
 
-set scss {
+set scss(1) {
 @mixin border-radius($radius) {
   -webkit-border-radius: $radius;
      -moz-border-radius: $radius;
@@ -59,7 +60,22 @@ set scss {
 
 ###############################################################################
 
-test sass-1.0 {overall command usage} -body {
+set scss(2) {
+# Comment 1
+$font-stack:    Helvetica, sans-serif;
+$primary-color: #333;
+
+# Comment 2
+body {
+  font: 100% $font-stack;
+  color: $primary-color;
+  width: 31.123456%;
+}
+}
+
+###############################################################################
+
+test sass-1.1 {overall command usage} -body {
   list [catch {sass} errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
@@ -67,7 +83,7 @@ test sass-1.0 {overall command usage} -body {
 
 ###############################################################################
 
-test sass-2.0 {version sub-command usage} -body {
+test sass-2.1 {version sub-command usage} -body {
   list [catch {sass version foo} errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
@@ -75,14 +91,14 @@ test sass-2.0 {version sub-command usage} -body {
 
 ###############################################################################
 
-test sass-2.1 {version sub-command output} -body {
+test sass-2.2 {version sub-command output} -body {
   sass version
 } -match regexp -result \
 {^libsass \d+\.\d+\.\d+(?:-\d+(?:-g[0-9a-f]+(?:-dirty)?)?)?$}
 
 ###############################################################################
 
-test sass-3.0 {compile sub-command usage} -body {
+test sass-3.1 {compile sub-command usage} -body {
   list [catch {sass compile} errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
@@ -90,7 +106,7 @@ test sass-3.0 {compile sub-command usage} -body {
 
 ###############################################################################
 
-test sass-3.1 {compile sub-command compile error} -body {
+test sass-3.2 {compile sub-command compile error} -body {
   set dictionary [sass compile ""]
 
   list [getDictValue $dictionary errorStatus] \
@@ -104,7 +120,7 @@ test sass-3.1 {compile sub-command compile error} -body {
 
 ###############################################################################
 
-test sass-3.2 {compile sub-command syntax error} -body {
+test sass-3.3 {compile sub-command syntax error} -body {
   set dictionary [sass compile test]
 
   list [getDictValue $dictionary errorStatus] \
@@ -118,8 +134,8 @@ test sass-3.2 {compile sub-command syntax error} -body {
 
 ###############################################################################
 
-test sass-3.3 {compile sub-command output} -body {
-  set dictionary [sass compile $scss]
+test sass-3.4 {compile sub-command output} -body {
+  set dictionary [sass compile $scss(1)]
 
   list [getDictValue $dictionary errorStatus] \
       [getDictValue $dictionary outputString] \
@@ -136,7 +152,204 @@ test sass-3.3 {compile sub-command output} -body {
 
 ###############################################################################
 
-unset -nocomplain scss
+test sass-3.5 {compile sub-command output w/data} -body {
+  set dictionary [sass compile -type data $scss(1)]
+
+  list [getDictValue $dictionary errorStatus] \
+      [getDictValue $dictionary outputString] \
+      [getDictValue $dictionary sourceMapString] \
+      [getDictValue $dictionary errorMessage]
+} -cleanup {
+  unset -nocomplain dictionary
+} -result {0 {.box {
+  -webkit-border-radius: 10px;
+  -moz-border-radius: 10px;
+  -ms-border-radius: 10px;
+  border-radius: 10px; }
+} {} {}}
+
+###############################################################################
+
+test sass-3.6 {compile sub-command output w/file} -body {
+  set dictionary [sass compile -type file [file join $path good.scss]]
+
+  list [getDictValue $dictionary errorStatus] \
+      [getDictValue $dictionary outputString] \
+      [getDictValue $dictionary sourceMapString] \
+      [getDictValue $dictionary errorMessage]
+} -cleanup {
+  unset -nocomplain dictionary
+} -result {}
+
+###############################################################################
+
+test sass-4.1 {option precision (int)} -body {
+  list [catch {
+    sass compile -options [list precision 2] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list precision x] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.2 {option output_style (enum)} -body {
+  list [catch {
+    sass compile -options [list output_style compressed] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list output_style x] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.3 {option source_comments (bool)} -body {
+  list [catch {
+    sass compile -options [list source_comments true] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list source_comments x] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.4 {option source_map_embed (bool)} -body {
+  list [catch {
+    sass compile -options [list source_map_embed true] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list source_map_embed x] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.5 {option source_map_contents (bool)} -body {
+  list [catch {
+    sass compile -options [list source_map_contents true] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list source_map_contents x] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.6 {option omit_source_map_url (bool)} -body {
+  list [catch {
+    sass compile -options [list omit_source_map_url true] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list omit_source_map_url x] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.7 {option is_indented_syntax_src (bool)} -body {
+  list [catch {
+    sass compile -options [list is_indented_syntax_src true] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list is_indented_syntax_src x] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.8 {option indent (string)} -body {
+  list [catch {
+    sass compile -options [list indent **] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.9 {option linefeed (string)} -body {
+  list [catch {
+    sass compile -options [list linefeed \n\n] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list linefeed **] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.10 {option input_path (string)} -body {
+  list [catch {
+    sass compile -options [list input_path ""] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list input_path ""] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.11 {option output_path (string)} -body {
+  list [catch {
+    sass compile -options [list output_path ""] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list output_path ""] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.12 {option image_path (string)} -body {
+  list [catch {
+    sass compile -options [list image_path ""] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list image_path ""] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.13 {option include_path (string)} -body {
+  list [catch {
+    sass compile -options [list include_path ""] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list include_path ""] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.14 {option source_map_file (string)} -body {
+  list [catch {
+    sass compile -options [list source_map_file ""] $scss(2)
+  } errMsg] [catch {
+    sass compile -options [list source_map_file ""] $scss(2)
+  } errMsg]
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+unset -nocomplain scss path
 
 # cleanup
 ::tcltest::cleanupTests
