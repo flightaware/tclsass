@@ -27,6 +27,14 @@ if {[llength [info commands appendArgs]] == 0} then {
 
 ###############################################################################
 
+if {[llength [info commands getEnvVar]] == 0} then {
+  proc getEnvVar { name } {
+    return [expr {[info exists ::env($name)] ? $::env($name) : ""}]
+  }
+}
+
+###############################################################################
+
 if {[llength [info commands getDictValue]] == 0} then {
   proc getDictValue { dictionary name {default ""} {wrap ""} } {
     if {[llength [info commands dict]] > 0} then {
@@ -50,28 +58,22 @@ if {[llength [info commands getDictValue]] == 0} then {
 if {[llength [info commands getTempPath]] == 0} then {
   proc getTempPath {} {
     global tcl_platform
-
     set names [list]
-
     foreach name [list TEMP TMP] {
       lappend names [string toupper $name] [string tolower $name] \
           [string totitle $name]
     }
-
     foreach name $names {
-      set value [getEnvironmentVariable $name]
-
+      set value [getEnvVar $name]
       if {[string length $value] > 0} then {
         return [file normalize $value]
       }
     }
-
     if {[info exists tcl_platform(platform)]} then {
       if {$tcl_platform(platform) ne "windows"} then {
         return /tmp; # TODO: Good default on Unix?
       }
     }
-
     error "no temporary path is available"
   }
 }
@@ -92,11 +94,9 @@ set scss(1) {
 ###############################################################################
 
 set scss(2) {
-# Comment 1
-$font-stack:    Helvetica, sans-serif;
+$font-stack: Helvetica, sans-serif;
 $primary-color: #333;
 
-# Comment 2
 body {
   font: 100% $font-stack;
   color: $primary-color;
@@ -201,16 +201,33 @@ test sass-3.5 {compile sub-command output w/data} -body {
 
 ###############################################################################
 
-test sass-3.6 {compile sub-command output w/file} -body {
-  set dictionary [sass compile -type file [file join $path good.scss]]
+test sass-3.6 {compile sub-command output w/good file} -body {
+  sass compile -type file -options \
+      [list input_path [file join $path good.scss]] \
+      [file join $path good.scss]
+} -result {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333; }
+}}
 
-  list [getDictValue $dictionary errorStatus] \
-      [getDictValue $dictionary outputString] \
-      [getDictValue $dictionary sourceMapString] \
-      [getDictValue $dictionary errorMessage]
+###############################################################################
+
+set fileName [file join $path bad.scss]
+
+###############################################################################
+
+test sass-3.7 {compile sub-command output w/bad file} -body {
+  sass compile -type file -options \
+      [list input_path $fileName] $fileName
 } -cleanup {
-  unset -nocomplain dictionary
-} -result {}
+  unset -nocomplain fileName
+} -result \
+[subst {errorStatus 1 errorMessage {$fileName:1: invalid top-level expression
+} errorLine 1 errorColumn 1}]
+
+###############################################################################
+
+unset -nocomplain fileName
 
 ###############################################################################
 
@@ -220,7 +237,8 @@ test sass-4.1 {malformed options} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {1 {malformed dictionary
+}}
 
 ###############################################################################
 
@@ -230,7 +248,11 @@ test sass-4.2 {option unknown} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {1 {unknown option, must be: precision, output_style,\
+source_comments, source_map_embed, source_map_contents, omit_source_map_url,\
+is_indented_syntax_src, indent, linefeed, input_path, output_path, image_path,\
+include_path, or source_map_file
+}}
 
 ###############################################################################
 
@@ -242,7 +264,11 @@ test sass-4.3 {option precision (int)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12%; }
+}} 1 {expected integer but got "x"}}
 
 ###############################################################################
 
@@ -254,7 +280,10 @@ test sass-4.4 {option output_style (enum)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body{font:100%\
+Helvetica,sans-serif;color:#333;width:31.12346%}}} 1 {unsupported output style,\
+must be: nested, expanded, compact, or compressed
+}}
 
 ###############################################################################
 
@@ -266,7 +295,12 @@ test sass-4.5 {option source_comments (bool)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {/* line 5, stdin */
+body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
 
@@ -278,7 +312,11 @@ test sass-4.6 {option source_map_embed (bool)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
 
@@ -290,7 +328,11 @@ test sass-4.7 {option source_map_contents (bool)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
 
@@ -302,7 +344,11 @@ test sass-4.8 {option omit_source_map_url (bool)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
 
@@ -314,7 +360,8 @@ test sass-4.9 {option is_indented_syntax_src (bool)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 1 errorMessage {stdin:5: invalid property name
+} errorLine 5 errorColumn 6} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
 
@@ -324,7 +371,11 @@ test sass-4.10 {option indent (string)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+**font: 100% Helvetica, sans-serif;
+**color: #333;
+**width: 31.12346%; }
+}}}
 
 ###############################################################################
 
@@ -334,7 +385,8 @@ test sass-4.11 {option linefeed (string)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {**  font: 100% Helvetica,\
+sans-serif;**  color: #333;**  width: 31.12346%; }**}}}
 
 ###############################################################################
 
@@ -346,7 +398,15 @@ test sass-4.12 {option input_path (string)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}} 0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}}}
 
 ###############################################################################
 
@@ -358,7 +418,15 @@ test sass-4.13 {option output_path (string)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}} 0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}}}
 
 ###############################################################################
 
@@ -370,7 +438,15 @@ test sass-4.14 {option image_path (string)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}} 0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}}}
 
 ###############################################################################
 
@@ -382,20 +458,46 @@ test sass-4.15 {option include_path (string)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -result {0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}} 0 {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31.12346%; }
+}}}
 
 ###############################################################################
 
 test sass-4.16 {option source_map_file (string)} -body {
   list [catch {
     sass compile -options [list source_map_file [file join \
-        [getTempPath] sass-4.15.map]] $scss(2)
+        [getTempPath] sass-4.16.map]] $scss(2)
   } errMsg] $errMsg [catch {
     sass compile -options [list source_map_file ""] $scss(2)
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {}
+} -match regexp -result {^0 \{errorStatus 0 outputString \{body \{
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31\.12346%; \}
+
+/\*# sourceMappingURL=(?:.*?)/sass-4\.16\.map \*/\} sourceMapString \{\{
+        "version": 3,
+        "file": "(?:.*?)",
+        "sources": \[
+                "(?:.*?)"
+        \],
+        "sourcesContent": \[\],
+        "mappings": "(?:.*?)",
+        "names": \[\]
+\}\}\} 0 \{errorStatus 0 outputString \{body \{
+  font: 100% Helvetica, sans-serif;
+  color: #333;
+  width: 31\.12346%; \}
+\}\}$}
 
 ###############################################################################
 

@@ -9,12 +9,37 @@ sass \- interfaces with Sass, a pre-processing language for CSS.
 .SH SYNOPSIS
 \fBpackage require sass\fR ?\fB1.0\fR?
 .sp
-\fBsass compile \fR?\fIoptions\fR? \fIscript\fR
+\fBsass\fR \fBcompile \fR?\fB\-type\fR \fItype\fR? \fR?\fB\-options\fR \fIdictionary\fR? ?\fB\-\|\-\fR? ?\fIsource\fR?
 .sp
 \fBsass version\fR
 .BE
 .SH DESCRIPTION
 .PP
+This command is used to compile Sass language source into CSS via libsass.  The
+\fItype\fR value must be \fBdata\fR or \fBfile\fR.  The \fIdictionary\fR value
+must be a dictionary containing name/value pairs that correspond to the subset
+of context options supported by libsass and this package, which is:
+.PP
+.RS
+.ne 5
+.ta 3c
+.nf
+\fBprecision\fR	Integer that specifies the floating point precision.
+\fBoutput_style\fR	Must be \fBnested\fR, \fBexpanded\fR, \fBcompact\fR, or \fBcompressed\fR.
+\fBsource_comments\fR	Boolean to enable/disable source comments.
+\fBsource_map_embed\fR	Boolean to enable/disable source map embedding.
+\fBsource_map_contents\fR	Boolean to enable/disable source map contents.
+\fBomit_source_map_url\fR	Boolean to omit/include source map URL.
+\fBis_indented_syntax_src\fR	Boolean to enable/disable indented syntax.
+\fBindent\fR	String used to indent levels in the CSS output.
+\fBlinefeed\fR	String used to advance lines in the CSS output.
+\fBinput_path\fR	String input path.
+\fBoutput_path\fR	String output path.
+\fBimage_path\fR	String image path.
+\fBinclude_path\fR	String include path, delimited by PATH separator.
+\fBsource_map_file\fR	String source map file name.
+.fi
+.RE
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78
