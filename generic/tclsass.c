@@ -1355,8 +1355,8 @@ static int SassObjCmd(
 	    objPtr2 = Tcl_NewStringObj(libsass_version(), -1);
 
 	    if (objPtr2 == NULL) {
-		Tcl_DecrRefCount(listPtr);
 		Tcl_DecrRefCount(objPtr1);
+		Tcl_DecrRefCount(listPtr);
 		Tcl_AppendResult(interp, "out of memory: objPtr2\n", NULL);
 		code = TCL_ERROR;
 		goto done;
@@ -1366,9 +1366,9 @@ static int SassObjCmd(
 	    code = Tcl_ListObjAppendElement(interp, listPtr, objPtr1);
 
 	    if (code != TCL_OK) {
-		Tcl_DecrRefCount(listPtr);
-		Tcl_DecrRefCount(objPtr1);
 		Tcl_DecrRefCount(objPtr2);
+		Tcl_DecrRefCount(objPtr1);
+		Tcl_DecrRefCount(listPtr);
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -1376,14 +1376,17 @@ static int SassObjCmd(
 	    code = Tcl_ListObjAppendElement(interp, listPtr, objPtr2);
 
 	    if (code != TCL_OK) {
-		Tcl_DecrRefCount(listPtr);
-		Tcl_DecrRefCount(objPtr1);
 		Tcl_DecrRefCount(objPtr2);
+		Tcl_DecrRefCount(objPtr1);
+		Tcl_DecrRefCount(listPtr);
 		code = TCL_ERROR;
 		goto done;
 	    }
 
 	    Tcl_SetObjResult(interp, listPtr);
+	    Tcl_DecrRefCount(objPtr2);
+	    Tcl_DecrRefCount(objPtr1);
+	    Tcl_DecrRefCount(listPtr);
 	    break;
 	}
 	default: {
