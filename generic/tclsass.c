@@ -811,6 +811,66 @@ static int SetResultFromContext(
 
 	if (code != TCL_OK)
 	    goto done;
+
+	objPtr = Tcl_NewStringObj("errorLine", -1);
+
+	if (objPtr == NULL) {
+	    Tcl_AppendResult(interp, "out of memory: errorLine1\n", NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	Tcl_IncrRefCount(objPtr);
+	code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	if (code != TCL_OK)
+	    goto done;
+
+	objPtr = Tcl_NewWideIntObj(sass_context_get_error_line(ctxPtr));
+
+	if (objPtr == NULL) {
+	    Tcl_AppendResult(interp, "out of memory: errorLine2\n", NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	Tcl_IncrRefCount(objPtr);
+	code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	if (code != TCL_OK)
+	    goto done;
+
+	objPtr = Tcl_NewStringObj("errorColumn", -1);
+
+	if (objPtr == NULL) {
+	    Tcl_AppendResult(interp, "out of memory: errorColumn1\n", NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	Tcl_IncrRefCount(objPtr);
+	code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	if (code != TCL_OK)
+	    goto done;
+
+	objPtr = Tcl_NewWideIntObj(sass_context_get_error_column(ctxPtr));
+
+	if (objPtr == NULL) {
+	    Tcl_AppendResult(interp, "out of memory: errorColumn2\n", NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
+
+	Tcl_IncrRefCount(objPtr);
+	code = Tcl_ListObjAppendElement(interp, listPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	if (code != TCL_OK)
+	    goto done;
     }
 
     Tcl_SetObjResult(interp, listPtr);
