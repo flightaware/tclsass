@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {[lsearch [namespace children] ::tcltest] == -1} then {
     package require tcltest
     namespace import ::tcltest::*
 }
@@ -42,6 +42,37 @@ if {[llength [info commands getDictValue]] == 0} then {
       }
       return $default
     }
+  }
+}
+
+###############################################################################
+
+if {[llength [info commands getTempPath]] == 0} then {
+  proc getTempPath {} {
+    global tcl_platform
+
+    set names [list]
+
+    foreach name [list TEMP TMP] {
+      lappend names [string toupper $name] [string tolower $name] \
+          [string totitle $name]
+    }
+
+    foreach name $names {
+      set value [getEnvironmentVariable $name]
+
+      if {[string length $value] > 0} then {
+        return [file normalize $value]
+      }
+    }
+
+    if {[info exists tcl_platform(platform)]} then {
+      if {$tcl_platform(platform) ne "windows"} then {
+        return /tmp; # TODO: Good default on Unix?
+      }
+    }
+
+    error "no temporary path is available"
   }
 }
 
@@ -183,166 +214,185 @@ test sass-3.6 {compile sub-command output w/file} -body {
 
 ###############################################################################
 
-test sass-4.1 {option precision (int)} -body {
+test sass-4.1 {malformed options} -body {
+  list [catch {
+    sass compile -options [list foo] $scss(2)
+  } errMsg] $errMsg
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.2 {option unknown} -body {
+  list [catch {
+    sass compile -options [list foo bar] $scss(2)
+  } errMsg] $errMsg
+} -cleanup {
+  unset -nocomplain errMsg
+} -result {}
+
+###############################################################################
+
+test sass-4.3 {option precision (int)} -body {
   list [catch {
     sass compile -options [list precision 2] $scss(2)
-  } errMsg] [catch {
+  } errMsg] $errMsg [catch {
     sass compile -options [list precision x] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.2 {option output_style (enum)} -body {
+test sass-4.4 {option output_style (enum)} -body {
   list [catch {
     sass compile -options [list output_style compressed] $scss(2)
-  } errMsg] [catch {
+  } errMsg] $errMsg [catch {
     sass compile -options [list output_style x] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.3 {option source_comments (bool)} -body {
+test sass-4.5 {option source_comments (bool)} -body {
   list [catch {
     sass compile -options [list source_comments true] $scss(2)
-  } errMsg] [catch {
+  } errMsg] $errMsg [catch {
     sass compile -options [list source_comments x] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.4 {option source_map_embed (bool)} -body {
+test sass-4.6 {option source_map_embed (bool)} -body {
   list [catch {
     sass compile -options [list source_map_embed true] $scss(2)
-  } errMsg] [catch {
+  } errMsg] $errMsg [catch {
     sass compile -options [list source_map_embed x] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.5 {option source_map_contents (bool)} -body {
+test sass-4.7 {option source_map_contents (bool)} -body {
   list [catch {
     sass compile -options [list source_map_contents true] $scss(2)
-  } errMsg] [catch {
+  } errMsg] $errMsg [catch {
     sass compile -options [list source_map_contents x] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.6 {option omit_source_map_url (bool)} -body {
+test sass-4.8 {option omit_source_map_url (bool)} -body {
   list [catch {
     sass compile -options [list omit_source_map_url true] $scss(2)
-  } errMsg] [catch {
+  } errMsg] $errMsg [catch {
     sass compile -options [list omit_source_map_url x] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.7 {option is_indented_syntax_src (bool)} -body {
+test sass-4.9 {option is_indented_syntax_src (bool)} -body {
   list [catch {
     sass compile -options [list is_indented_syntax_src true] $scss(2)
-  } errMsg] [catch {
+  } errMsg] $errMsg [catch {
     sass compile -options [list is_indented_syntax_src x] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.8 {option indent (string)} -body {
+test sass-4.10 {option indent (string)} -body {
   list [catch {
     sass compile -options [list indent **] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.9 {option linefeed (string)} -body {
+test sass-4.11 {option linefeed (string)} -body {
   list [catch {
-    sass compile -options [list linefeed \n\n] $scss(2)
-  } errMsg] [catch {
     sass compile -options [list linefeed **] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.10 {option input_path (string)} -body {
+test sass-4.12 {option input_path (string)} -body {
   list [catch {
+    sass compile -options [list input_path $path] $scss(2)
+  } errMsg] $errMsg [catch {
     sass compile -options [list input_path ""] $scss(2)
-  } errMsg] [catch {
-    sass compile -options [list input_path ""] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.11 {option output_path (string)} -body {
+test sass-4.13 {option output_path (string)} -body {
   list [catch {
+    sass compile -options [list output_path $path] $scss(2)
+  } errMsg] $errMsg [catch {
     sass compile -options [list output_path ""] $scss(2)
-  } errMsg] [catch {
-    sass compile -options [list output_path ""] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.12 {option image_path (string)} -body {
+test sass-4.14 {option image_path (string)} -body {
   list [catch {
+    sass compile -options [list image_path $path] $scss(2)
+  } errMsg] $errMsg [catch {
     sass compile -options [list image_path ""] $scss(2)
-  } errMsg] [catch {
-    sass compile -options [list image_path ""] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.13 {option include_path (string)} -body {
+test sass-4.15 {option include_path (string)} -body {
   list [catch {
+    sass compile -options [list include_path $path] $scss(2)
+  } errMsg] $errMsg [catch {
     sass compile -options [list include_path ""] $scss(2)
-  } errMsg] [catch {
-    sass compile -options [list include_path ""] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
 
 ###############################################################################
 
-test sass-4.14 {option source_map_file (string)} -body {
+test sass-4.16 {option source_map_file (string)} -body {
   list [catch {
+    sass compile -options [list source_map_file [file join \
+        [getTempPath] sass-4.15.map]] $scss(2)
+  } errMsg] $errMsg [catch {
     sass compile -options [list source_map_file ""] $scss(2)
-  } errMsg] [catch {
-    sass compile -options [list source_map_file ""] $scss(2)
-  } errMsg]
+  } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
 } -result {}
