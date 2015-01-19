@@ -10,8 +10,8 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 if {[lsearch [namespace children] ::tcltest] == -1} then {
-    package require tcltest
-    namespace import ::tcltest::*
+  package require tcltest
+  namespace import ::tcltest::*
 }
 
 set path [file dirname [info script]]
@@ -485,14 +485,14 @@ test sass-4.16 {option source_map_file (string)} -body {
   width: 31\.12346%; \}
 
 /\*# sourceMappingURL=(?:.*?)/sass-4\.16\.map \*/\} sourceMapString \{\{
-        "version": 3,
-        "file": "(?:.*?)",
-        "sources": \[
-                "(?:.*?)"
-        \],
-        "sourcesContent": \[\],
-        "mappings": "(?:.*?)",
-        "names": \[\]
+	"version": 3,
+	"file": "(?:.*?)",
+	"sources": \[
+		"(?:.*?)"
+	\],
+	"sourcesContent": \[\],
+	"mappings": "(?:.*?)",
+	"names": \[\]
 \}\}\} 0 \{errorStatus 0 outputString \{body \{
   font: 100% Helvetica, sans-serif;
   color: #333;

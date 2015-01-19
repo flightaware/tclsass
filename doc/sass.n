@@ -20,26 +20,62 @@ This command is used to compile Sass language source into CSS via libsass.  The
 must be a dictionary containing name/value pairs that correspond to the subset
 of context options supported by libsass and this package, which is:
 .PP
-.RS
-.ne 5
-.ta 3c
-.nf
-\fBprecision\fR	Integer that specifies the floating point precision.
-\fBoutput_style\fR	Must be \fBnested\fR, \fBexpanded\fR, \fBcompact\fR, or \fBcompressed\fR.
-\fBsource_comments\fR	Boolean to enable/disable source comments.
-\fBsource_map_embed\fR	Boolean to enable/disable source map embedding.
-\fBsource_map_contents\fR	Boolean to enable/disable source map contents.
-\fBomit_source_map_url\fR	Boolean to omit/include source map URL.
-\fBis_indented_syntax_src\fR	Boolean to enable/disable indented syntax.
-\fBindent\fR	String used to indent levels in the CSS output.
-\fBlinefeed\fR	String used to advance lines in the CSS output.
-\fBinput_path\fR	String input path.
-\fBoutput_path\fR	String output path.
-\fBimage_path\fR	String image path.
-\fBinclude_path\fR	String include path, delimited by PATH separator.
-\fBsource_map_file\fR	String source map file name.
-.fi
-.RE
+.TP
+\fBprecision\fR
+.PP
+Integer that specifies the floating point precision.
+.TP
+\fBoutput_style\fR
+.PP
+Must be \fBnested\fR, \fBexpanded\fR, \fBcompact\fR, or \fBcompressed\fR.
+.TP
+\fBsource_comments\fR
+.PP
+Boolean to enable/disable source comments.
+.TP
+\fBsource_map_embed\fR
+.PP
+Boolean to enable/disable source map embedding.
+.TP
+\fBsource_map_contents\fR
+.PP
+Boolean to enable/disable source map contents.
+.TP
+\fBomit_source_map_url\fR
+.PP
+Boolean to omit/include source map URL.
+.TP
+\fBis_indented_syntax_src\fR
+.PP
+Boolean to enable/disable indented syntax.
+.TP
+\fBindent\fR
+.PP
+String used to indent levels in the CSS output.
+.TP
+\fBlinefeed\fR
+.PP
+String used to advance lines in the CSS output.
+.TP
+\fBinput_path\fR
+.PP
+String input path.
+.TP
+\fBoutput_path\fR
+.PP
+String output path.
+.TP
+\fBimage_path\fR
+.PP
+String image path.
+.TP
+\fBinclude_path\fR
+.PP
+String include path, delimited by PATH separator.
+.TP
+\fBsource_map_file\fR
+.PP
+String source map file name.
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78
