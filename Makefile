@@ -50,8 +50,8 @@ PKG_HEADERS	=  generic/tclsass.h
 # configuration options) composed of the named objects.
 #========================================================================
 
-PKG_LIB_FILE	= libsass1.0.so
-PKG_STUB_LIB_FILE = libsassstub1.0.a
+PKG_LIB_FILE	= libtclsass1.0.so
+PKG_STUB_LIB_FILE = libtclsassstub1.0.a
 
 lib_BINARIES	= $(PKG_LIB_FILE)
 BINARIES	= $(lib_BINARIES)
