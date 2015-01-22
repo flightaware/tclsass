@@ -212,11 +212,22 @@ test sass-3.6 {compile sub-command output w/good file} -body {
 
 ###############################################################################
 
+test sass-3.7 {compile sub-command w/helper procedure} -body {
+  tclsass::compileWithSass -type file [file join $path good.scss]
+} -cleanup {
+  unset -nocomplain fileName
+} -result {errorStatus 0 outputString {body {
+  font: 100% Helvetica, sans-serif;
+  color: #333; }
+}}
+
+###############################################################################
+
 set fileName [file join $path bad.scss]
 
 ###############################################################################
 
-test sass-3.7 {compile sub-command output w/bad file} -body {
+test sass-3.8 {compile sub-command output w/bad file} -body {
   sass compile -type file -options \
       [list input_path $fileName] $fileName
 } -cleanup {

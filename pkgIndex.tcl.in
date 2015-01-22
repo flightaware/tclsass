@@ -1,5 +1,15 @@
 #
-# Tcl package index file
+# pkgIndex.tcl -- Tcl Package for libsass
 #
+# Tcl package index file.
+#
+# Written by Joe Mistachkin.
+#
+# See the file "license.terms" for information on usage and redistribution
+# of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 package ifneeded @PACKAGE_NAME@ @PACKAGE_VERSION@ \
-    [list load [file join $dir @PKG_LIB_FILE@] @PACKAGE_NAME@]
+[subst -nocommands -nobackslashes {
+  source [file join $dir helper.tcl]
+  ::tclsass::load $dir @PKG_LIB_FILE@ @PACKAGE_NAME@
+}]

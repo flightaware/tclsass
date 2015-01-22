@@ -71,7 +71,7 @@ TEA_ADD_INCLUDES([-I../libsass])
 TEA_ADD_LIBS([-L../libsass/lib -lsass])
 TEA_ADD_CFLAGS([])
 TEA_ADD_STUB_SOURCES([])
-TEA_ADD_TCL_SOURCES([])
+TEA_ADD_TCL_SOURCES([helper.tcl])
 
 #--------------------------------------------------------------------
 #

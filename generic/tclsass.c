@@ -561,7 +561,9 @@ static int ProcessContextOptions(
 	    return code;
 
 	if (CheckString(argLength, zArg, "--")) {
-	    *idxPtr = index;
+	    index++;
+
+	    *idxPtr = (index < objc) ? index : -1;
 	    return TCL_OK;
 	}
 
