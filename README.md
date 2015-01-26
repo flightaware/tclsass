@@ -1,3 +1,17 @@
+
+
+### Building
+
+Some versions of gcc produce bad code compiling libsass.  For example, 4.8.3.
+
+We have found that none of the tclsass tests will pass if libsass is compiled with -O2 but all of them will pass if it is compiled with -O1.
+
+gcc 4.8.5 works OK compiling libsass with -O2.  We don't know what happens with 4.8.4.
+
+libsass is writting using features in the c++0x standard that weren't added until gcc 4.6, so if you get something about option not recognized for -std, your C++ compiler is too old.
+
+### How to use
+
 Here is the revised spec (v3):
 
 Tcl Package Format: TEA
