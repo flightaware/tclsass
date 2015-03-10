@@ -441,6 +441,15 @@ test sass-4.13 {option output_path (string)} -body {
 
 ###############################################################################
 
+#
+# NOTE: The function associated with this option was removed from "libsass"
+#       in a recent commit, see:
+#
+#       https://github.com/sass/libsass/commit/c82c82bf6f
+#
+#       The "image_path" option itself is being retained; however, it will
+#       always raise a script error.
+#
 test sass-4.14 {option image_path (string)} -body {
   list [catch {
     sass compile -options [list image_path $path] $scss(2)
@@ -449,15 +458,8 @@ test sass-4.14 {option image_path (string)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {0 {errorStatus 0 outputString {body {
-  font: 100% Helvetica, sans-serif;
-  color: #333;
-  width: 31.12346%; }
-}} 0 {errorStatus 0 outputString {body {
-  font: 100% Helvetica, sans-serif;
-  color: #333;
-  width: 31.12346%; }
-}}}
+} -result {1 {option "image_path" has no setter} 1 {option "image_path" has no\
+setter}}
 
 ###############################################################################
 

@@ -398,7 +398,7 @@ static int FindAndSetContextOption(
     aOptions[10].xGetValue = (fn_get_any *)GetStringFromObj;
     aOptions[10].xSetOption = (fn_set_any *)sass_option_set_output_path;
     aOptions[11].xGetValue = (fn_get_any *)GetStringFromObj;
-    aOptions[11].xSetOption = (fn_set_any *)sass_option_set_image_path;
+    aOptions[11].xSetOption = (fn_set_any *)NULL;
     aOptions[12].xGetValue = (fn_get_any *)GetStringFromObj;
     aOptions[12].xSetOption = (fn_set_any *)sass_option_set_include_path;
     aOptions[13].xGetValue = (fn_get_any *)GetStringFromObj;
@@ -422,22 +422,37 @@ static int FindAndSetContextOption(
 		int iValue;
 
 		if (xGetValue(interp, objPtr, &iValue) == TCL_OK) {
-		    xSetOption(optsPtr, (bool)iValue);
-		    code = TCL_OK;
+		    if (xSetOption != NULL) {
+			xSetOption(optsPtr, (bool)iValue);
+			code = TCL_OK;
+		    } else {
+			Tcl_AppendResult(interp,
+				"option \"", zName, "\" has no setter", NULL);
+		    }
                 }
 	    } else if (xGetValue == Tcl_GetIntFromObj) {
 		int iValue;
 
 		if (xGetValue(interp, objPtr, &iValue) == TCL_OK) {
-		    xSetOption(optsPtr, iValue);
-		    code = TCL_OK;
+		    if (xSetOption != NULL) {
+			xSetOption(optsPtr, iValue);
+			code = TCL_OK;
+		    } else {
+			Tcl_AppendResult(interp,
+				"option \"", zName, "\" has no setter", NULL);
+		    }
                 }
 	    } else if (xGetValue == GetOutputStyleFromObj) {
 		enum Sass_Output_Style eValue;
 
 		if (xGetValue(interp, objPtr, &eValue) == TCL_OK) {
-		    xSetOption(optsPtr, eValue);
-		    code = TCL_OK;
+		    if (xSetOption != NULL) {
+			xSetOption(optsPtr, eValue);
+			code = TCL_OK;
+		    } else {
+			Tcl_AppendResult(interp,
+				"option \"", zName, "\" has no setter", NULL);
+		    }
                 }
 	    } else if (xGetValue == GetStringFromObj) {
 		int valueLength;
@@ -445,8 +460,13 @@ static int FindAndSetContextOption(
 
 		if (xGetValue(interp, objPtr, &valueLength,
 			&zValue) == TCL_OK) {
-		    xSetOption(optsPtr, zValue);
-		    code = TCL_OK;
+		    if (xSetOption != NULL) {
+			xSetOption(optsPtr, zValue);
+			code = TCL_OK;
+		    } else {
+			Tcl_AppendResult(interp,
+				"option \"", zName, "\" has no setter", NULL);
+		    }
 		}
 	    } else {
 		Tcl_AppendResult(interp, "unsupported option type\n", NULL);
