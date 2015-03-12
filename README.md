@@ -52,7 +52,7 @@ be supported:
     linefeed (string)
     input_path (string)
     output_path (string)
-    image_path (string)
+    image_path (string) ... (removed by libsass, now an error)
     include_path (string)
     source_map_file (string)
 
