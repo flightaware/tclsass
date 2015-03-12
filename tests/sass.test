@@ -124,8 +124,8 @@ test sass-2.1 {version sub-command usage} -body {
 
 test sass-2.2 {version sub-command output} -body {
   sass version
-} -match regexp -result \
-{^libsass \d+\.\d+\.\d+(?:-\d+(?:-g[0-9a-f]+(?:-dirty)?)?)?$}
+} -match regexp -result {^libsass\
+\d+\.\d+\.\d+(?:-\d+(?:-g[0-9a-f]+(?:-dirty)?)?|-beta\.\d+(?:-dirty)?)?$}
 
 ###############################################################################
 
