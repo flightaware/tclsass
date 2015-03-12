@@ -160,7 +160,8 @@ test sass-3.3 {compile sub-command syntax error} -body {
       [getDictValue $dictionary errorMessage]
 } -cleanup {
   unset -nocomplain dictionary
-} -result {1 {} {} {stdin:1: invalid top-level expression
+} -result {1 {} {} {Error: invalid top-level expression
+        on line 1 of stdin
 }}
 
 ###############################################################################
@@ -233,7 +234,8 @@ test sass-3.8 {compile sub-command output w/bad file} -body {
 } -cleanup {
   unset -nocomplain fileName
 } -result \
-[subst {errorStatus 1 errorMessage {$fileName:1: invalid top-level expression
+[subst {errorStatus 1 errorMessage {Error: invalid top-level expression
+        on line 1 of tests/bad.scss
 } errorLine 1 errorColumn 1}]
 
 ###############################################################################
@@ -371,8 +373,9 @@ test sass-4.9 {option is_indented_syntax_src (bool)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {0 {errorStatus 1 errorMessage {stdin:5: invalid property name
-} errorLine 5 errorColumn 6} 1 {expected boolean value but got "x"}}
+} -result {0 {errorStatus 1 errorMessage {Error: invalid property name
+        on line 5 of stdin
+} errorLine 5 errorColumn 8} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
 
