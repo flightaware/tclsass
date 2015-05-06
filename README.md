@@ -15,8 +15,11 @@ libsass is writting using features in the c++0x standard that weren't added unti
 Here is the revised spec (v3):
 
 Tcl Package Format: TEA
+
 Documentation Format: TEA
+
 Tcl Command Name: "sass"
+
 Sub-Commands: "version", "compile"
 
 The [sass version] sub-command will have no arguments.
