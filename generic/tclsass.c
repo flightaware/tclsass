@@ -1420,7 +1420,7 @@ static int SassObjCmd(
 
 done:
     if (optsPtr != NULL) {
-	free(optsPtr); /* HACK: No official destructor function. */
+	sass_delete_options(optsPtr);
 	optsPtr = NULL;
     }
 
