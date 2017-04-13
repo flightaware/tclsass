@@ -6,7 +6,7 @@ Look at the file sass/version.h to find your installed libsass version.  This co
 Over time there was some mixing of C++ delete and C free in libsass API.  The library libsass should free passed strings.
 Look at the file sass/version.h to find your installed libsass version.  This code should work with 3.3.x, 3.4.x and when released 3.5.x.
 
-Set CFLAGS=-DTCLSAS_CALLER_FREE to free strings passed to the API.
+If you have version of libsass older than 3.3.x, then set CFLAGS=-DTCLSAS_CALLER_FREE to free strings passed to the API.
 
 ### Configuration
  
