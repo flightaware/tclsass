@@ -1,3 +1,20 @@
+### libsass version support
+
+The libsass library has several API changes over time.  So, the code has dependencies on the libsass version.
+Look at the file sass/version.h to find your installed libsass version.  This code should work with 3.3.x, 3.4.x and when released 3.5.x.
+
+Over time there was some mixing of C++ delete and C free in libsass API.  The library libsass should free passed strings.
+Look at the file sass/version.h to find your installed libsass version.  This code should work with 3.3.x, 3.4.x and when released 3.5.x.
+
+Set CFLAGS=-DTCLSAS_CALLER_FREE to free strings passed to the API.
+
+### Configuration
+ 
+You should be able to build with
+
+    autoreconf && ./configure && make && make install
+
+If you need to adjust the paths to locate libsass, use the CFLAGS and LDFLAGS variables to pass the paths to configure.
 
 
 ### Building
