@@ -994,7 +994,9 @@ static int CompileForType(
 	    sass_compile_data_context(ctxPtr);
 	    SetResultFromContext(interp, (struct Sass_Context *)ctxPtr);
 	    sass_delete_data_context(ctxPtr);
+#ifdef TCLSAS_CALLER_FREE
 	    free(zDup);
+#endif
 
 	    return TCL_OK;
 	}
@@ -1420,7 +1422,12 @@ static int SassObjCmd(
 
 done:
     if (optsPtr != NULL) {
-	free(optsPtr); /* libsass 3.5 will have sass_delete_options */
+#ifdef HAVE_SASS_DELETE_OPTIONS
+	/* libsass 3.5.x adds the delete function to match the make function. */
+	sass_delete_options(optsPtr);
+#else
+	free(optsPtr);
+#endif
 	optsPtr = NULL;
     }
 
