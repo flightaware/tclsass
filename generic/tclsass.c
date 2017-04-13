@@ -1420,7 +1420,7 @@ static int SassObjCmd(
 
 done:
     if (optsPtr != NULL) {
-	sass_delete_options(optsPtr);
+	free(optsPtr); /* libsass 3.5 will have sass_delete_options */
 	optsPtr = NULL;
     }
 
