@@ -10,7 +10,7 @@
 #include <stdlib.h>		/* NOTE: For free(). */
 #include <string.h>		/* NOTE: For strlen(), strcmp(), strdup(). */
 #include "tcl.h"		/* NOTE: For public Tcl API. */
-#include "sass_context.h"	/* NOTE: For public libsass API. */
+#include "sass/context.h"	/* NOTE: For public libsass API. */
 #include "pkgVersion.h"		/* NOTE: Package version information. */
 #include "tclsassInt.h"		/* NOTE: For private package API. */
 #include "tclsass.h"		/* NOTE: For public package API. */
