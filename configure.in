@@ -74,7 +74,7 @@ TEA_ADD_STUB_SOURCES([])
 TEA_ADD_TCL_SOURCES([helper.tcl])
 
 AC_CHECK_HEADERS([sass/context.h])
-AC_LIBS([sass])
+AC_CHECK_LIB([sass],[libsass_version],, [AC_MSG_ERROR([unable to find libsass library])])
 
 #--------------------------------------------------------------------
 #
