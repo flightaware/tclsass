@@ -994,7 +994,7 @@ static int CompileForType(
 	    sass_compile_data_context(ctxPtr);
 	    SetResultFromContext(interp, (struct Sass_Context *)ctxPtr);
 	    sass_delete_data_context(ctxPtr);
-#ifdef TCLSAS_CALLER_FREE
+#ifdef TCLSASS_CALLER_FREE
 	    free(zDup);
 #endif
 
