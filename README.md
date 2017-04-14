@@ -1,3 +1,19 @@
+### libsass version support
+
+The libsass library has several API changes over time.  The code has source dependencies on the libsass version.
+Check your version of the libsass library. This code should work with 3.3.x, 3.4.x and beta 3.5.x.
+
+Over time there was some mixing of C++ delete and C free in libsass API.  That can corrupt the heap.  The library libsass should free passed strings.  But as the API evolved, there are versions that do not free all the strings passed to the API calls.  This can result in memory leaks.  It looks like for tclsass the libsass 3.5.x will address all this issue.  The addition of sass_delete_options() will complete the memory management fixes.
+
+If you have version of libsass older than 3.3.x, then set CFLAGS=-DTCLSASS_CALLER_FREE to free strings passed to the API. THIS HAS NOT BEEN TESTED.  You will have to check the behavior of your specific libsass version.
+
+### Configuration
+ 
+You should be able to build with
+
+    autoreconf && ./configure && make && make install
+
+If you need to adjust the paths to locate libsass, use the CFLAGS and LDFLAGS variables to pass the paths to configure.
 
 
 ### Building

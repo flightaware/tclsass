@@ -5332,25 +5332,6 @@ done
     done
 
 
-
-    vars="-I../libsass"
-    for i in $vars; do
-	PKG_INCLUDES="$PKG_INCLUDES $i"
-    done
-
-
-
-    vars="-L../libsass/lib -lsass"
-    for i in $vars; do
-	if test "${TEA_PLATFORM}" = "windows" -a "$GCC" = "yes" ; then
-	    # Convert foo.lib to -lfoo for GCC.  No-op if not *.lib
-	    i=`echo "$i" | sed -e 's/^\([^-].*\)\.lib$/-l\1/i'`
-	fi
-	PKG_LIBS="$PKG_LIBS $i"
-    done
-
-
-
     PKG_CFLAGS="$PKG_CFLAGS "
 
 

@@ -10,7 +10,7 @@
 #include <stdlib.h>		/* NOTE: For free(). */
 #include <string.h>		/* NOTE: For strlen(), strcmp(), strdup(). */
 #include "tcl.h"		/* NOTE: For public Tcl API. */
-#include "sass_context.h"	/* NOTE: For public libsass API. */
+#include "sass/context.h"	/* NOTE: For public libsass API. */
 #include "pkgVersion.h"		/* NOTE: Package version information. */
 #include "tclsassInt.h"		/* NOTE: For private package API. */
 #include "tclsass.h"		/* NOTE: For public package API. */
@@ -994,7 +994,9 @@ static int CompileForType(
 	    sass_compile_data_context(ctxPtr);
 	    SetResultFromContext(interp, (struct Sass_Context *)ctxPtr);
 	    sass_delete_data_context(ctxPtr);
+#ifdef TCLSASS_CALLER_FREE
 	    free(zDup);
+#endif
 
 	    return TCL_OK;
 	}
@@ -1420,7 +1422,12 @@ static int SassObjCmd(
 
 done:
     if (optsPtr != NULL) {
-	free(optsPtr); /* HACK: No official destructor function. */
+#ifdef HAVE_SASS_DELETE_OPTIONS
+	/* libsass 3.5.x adds the delete function to match the make function. */
+	sass_delete_options(optsPtr);
+#else
+	free(optsPtr);
+#endif
 	optsPtr = NULL;
     }
 
