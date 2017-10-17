@@ -10,11 +10,15 @@
 #ifndef _PKG_VERSION_H_
 #define _PKG_VERSION_H_
 
-#define PACKAGE_NAME		"sass"
+// Defined on command line
+//#define PACKAGE_NAME		"sass"
 #define COMMAND_NAME		"sass"
-#define PACKAGE_VERSION		"1.0"
+// Defined on command line
+//#define PACKAGE_VERSION		"1.0"
+// Minimum acceptable version of Tcl - maybe change to TCL_VERSION?
 #define PACKAGE_TCL_VERSION	"8.4"
-#define SOURCE_ID		"0000000000000000000000000000000000000000"
-#define SOURCE_TIMESTAMP	"0000-00-00 00:00:00 UTC"
+// Not used
+//#define SOURCE_ID		"0000000000000000000000000000000000000000"
+//#define SOURCE_TIMESTAMP	"0000-00-00 00:00:00 UTC"
 
 #endif /* _PKG_VERSION_H_ */
