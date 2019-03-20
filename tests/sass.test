@@ -146,7 +146,7 @@ test sass-3.2 {compile sub-command compile error} -body {
       [getDictValue $dictionary errorMessage]
 } -cleanup {
   unset -nocomplain dictionary
-} -result {3 {} {} {Error: Data context created with empty source string
+} -result {3 {} {} {Internal Error: Data context created with empty source string
 }}
 
 ###############################################################################
@@ -160,9 +160,7 @@ test sass-3.3 {compile sub-command syntax error} -body {
       [getDictValue $dictionary errorMessage]
 } -cleanup {
   unset -nocomplain dictionary
-} -result {1 {} {} {Error: invalid top-level expression
-        on line 1 of stdin
-}}
+} -result {1 {} {} Error:\ Invalid\ CSS\ after\ \"test\":\ expected\ \"\{\",\ was\ \"\"\n\ \ \ \ \ \ \ \ on\ line\ 1\ of\ stdin\n>>\ test\n\ \ \ ^\n}
 
 ###############################################################################
 
@@ -234,8 +232,10 @@ test sass-3.8 {compile sub-command output w/bad file} -body {
 } -cleanup {
   unset -nocomplain fileName
 } -result \
-[subst {errorStatus 1 errorMessage {Error: invalid top-level expression
+[subst {errorStatus 1 errorMessage {Error: Invalid CSS after "T": expected 1 selector or at-rule, was "This is not good SC"
         on line 1 of tests/bad.scss
+>> This is not good SCSS.
+   ^
 } errorLine 1 errorColumn 1}]
 
 ###############################################################################
@@ -280,7 +280,7 @@ test sass-4.3 {option precision (int)} -body {
 } -result {0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12%; }
+  width: 31.123456%; }
 }} 1 {expected integer but got "x"}}
 
 ###############################################################################
@@ -294,7 +294,8 @@ test sass-4.4 {option output_style (enum)} -body {
 } -cleanup {
   unset -nocomplain errMsg
 } -result {0 {errorStatus 0 outputString {body{font:100%\
-Helvetica,sans-serif;color:#333;width:31.12346%}}} 1 {unsupported output style,\
+Helvetica,sans-serif;color:#333;width:31.123456%}
+}} 1 {unsupported output style,\
 must be: nested, expanded, compact, or compressed
 }}
 
@@ -312,7 +313,7 @@ test sass-4.5 {option source_comments (bool)} -body {
 body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
@@ -328,8 +329,9 @@ test sass-4.6 {option source_map_embed (bool)} -body {
 } -result {0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
-}} 1 {expected boolean value but got "x"}}
+  width: 31.123456%; }
+
+/*# sourceMappingURL=data:application/json;base64,ewoJInZlcnNpb24iOiAzLAoJImZpbGUiOiAic3RkaW4uY3NzIiwKCSJzb3VyY2VzIjogWwoJCSJzdGRpbiIKCV0sCgkibmFtZXMiOiBbXSwKCSJtYXBwaW5ncyI6ICJBQUlBLEFBQUEsSUFBSSxDQUFDO0VBQ0gsSUFBSSxFQUFFLElBQUksQ0FKQyxTQUFTLEVBQUUsVUFBVTtFQUtoQyxLQUFLLEVBSlMsSUFBSTtFQUtsQixLQUFLLEVBQUUsVUFBVSxHQUNsQiIKfQ== */}} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
 
@@ -344,7 +346,7 @@ test sass-4.7 {option source_map_contents (bool)} -body {
 } -result {0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
@@ -360,7 +362,7 @@ test sass-4.8 {option omit_source_map_url (bool)} -body {
 } -result {0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
@@ -373,9 +375,7 @@ test sass-4.9 {option is_indented_syntax_src (bool)} -body {
   } errMsg] $errMsg
 } -cleanup {
   unset -nocomplain errMsg
-} -result {0 {errorStatus 1 errorMessage {Error: invalid property name
-        on line 5 of stdin
-} errorLine 5 errorColumn 8} 1 {expected boolean value but got "x"}}
+} -result {0 {errorStatus 1 errorMessage Error:\ Invalid\ CSS\ after\ \"body\ \{\":\ expected\ \"\}\",\ was\ \"\{\"\n\ \ \ \ \ \ \ \ on\ line\ 5\ of\ stdin\n>>\ body\ \{\ \{\n\ \ \ ------^\n errorLine 5 errorColumn 7} 1 {expected boolean value but got "x"}}
 
 ###############################################################################
 
@@ -388,7 +388,7 @@ test sass-4.10 {option indent (string)} -body {
 } -result {0 {errorStatus 0 outputString {body {
 **font: 100% Helvetica, sans-serif;
 **color: #333;
-**width: 31.12346%; }
+**width: 31.123456%; }
 }}}
 
 ###############################################################################
@@ -400,7 +400,7 @@ test sass-4.11 {option linefeed (string)} -body {
 } -cleanup {
   unset -nocomplain errMsg
 } -result {0 {errorStatus 0 outputString {body {**  font: 100% Helvetica,\
-sans-serif;**  color: #333;**  width: 31.12346%; }**}}}
+sans-serif;**  color: #333;**  width: 31.123456%; }**}}}
 
 ###############################################################################
 
@@ -415,11 +415,11 @@ test sass-4.12 {option input_path (string)} -body {
 } -result {0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }} 0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }}}
 
 ###############################################################################
@@ -435,11 +435,11 @@ test sass-4.13 {option output_path (string)} -body {
 } -result {0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }} 0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }}}
 
 ###############################################################################
@@ -477,11 +477,11 @@ test sass-4.15 {option include_path (string)} -body {
 } -result {0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }} 0 {errorStatus 0 outputString {body {
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31.12346%; }
+  width: 31.123456%; }
 }}}
 
 ###############################################################################
@@ -498,7 +498,7 @@ test sass-4.16 {option source_map_file (string)} -body {
 } -match regexp -result {^0 \{errorStatus 0 outputString \{body \{
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31\.12346%; \}
+  width: 31\.123456%; \}
 
 /\*# sourceMappingURL=(?:.*?)/sass-4\.16\.map \*/\} sourceMapString \{\{
 	"version": 3,
@@ -506,13 +506,12 @@ test sass-4.16 {option source_map_file (string)} -body {
 	"sources": \[
 		"(?:.*?)"
 	\],
-	"sourcesContent": \[\],
-	"mappings": "(?:.*?)",
-	"names": \[\]
+	"names": \[\],
+	"mappings": "(?:.*?)"
 \}\}\} 0 \{errorStatus 0 outputString \{body \{
   font: 100% Helvetica, sans-serif;
   color: #333;
-  width: 31\.12346%; \}
+  width: 31\.123456%; \}
 \}\}$}
 
 ###############################################################################
